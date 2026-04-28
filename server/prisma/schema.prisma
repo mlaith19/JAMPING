@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CompetitionStatus {
+  DRAFT
+  ACTIVE
+  FINISHED
+}
+
+enum CompetitionType {
+  SHOW_JUMPING
+}
+
+enum ScoringType {
+  FAULTS_TIME
+  TIME_ONLY
+  JUMP_OFF
+}
+
+enum EntryStatus {
+  REGISTERED
+  SCRATCHED
+  ACTIVE
+  DONE
+}
+
+enum RunStatus {
+  PENDING
+  OK
+  RETIRED
+  ELIMINATED
+}
+
+enum DeviceType {
+  START
+  FINISH
+}
+
+enum HorseSex {
+  MARE
+  STALLION
+  GELDING
+}
+
+model Competition {
+  id          String            @id @default(cuid())
+  name        String
+  date        DateTime
+  location    String
+  type        CompetitionType   @default(SHOW_JUMPING)
+  status      CompetitionStatus @default(DRAFT)
+  language    String            @default("en")
+  currency    String            @default("USD")
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  classes     ShowClass[]
+  entries     Entry[]
+}
+
+model ShowClass {
+  id                     String       @id @default(cuid())
+  competitionId          String
+  competition            Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  name                   String
+  courseHeight           Int          @default(100)
+  category               String       @default("Open")
+
+  tableType              String       @default("A") // Table A / C
+  allowedTime            Int?         // seconds
+  timeLimit              Int?         // seconds (auto = allowedTime * 2)
+
+  rankingMode            String       @default("FAULTS_TIME")
+  // FAULTS_TIME / FAULTS_ONLY / TIME_ONLY
+
+  hasJumpOff             Boolean      @default(false)
+  jumpOffAgainstClock    Boolean      @default(false)
+
+  secondDisobedienceRule String       @default("FEI")
+  // FEI = elimination
+  // LOCAL = +8 faults
+
+  scoringType            ScoringType  @default(FAULTS_TIME)
+  knockdownPenalty       Int          @default(4)
+  refusalPenalty         Int          @default(4)
+
+  // Scoring Rules (canonical, configurable per class)
+  knockdownFaults                  Int   @default(4)
+  firstRefusalFaults               Int   @default(4)
+  secondRefusalFaults              Int   @default(8)
+  maxRefusalsBeforeElimination     Int   @default(2)
+  timeFaultIntervalSeconds         Int   @default(4)
+  timeFaultPoints                  Int   @default(1)
+  jumpOffTimeFaultIntervalSeconds  Int   @default(1)
+  jumpOffTimeFaultPoints           Int   @default(1)
+  timeLimitMultiplier              Float @default(2.0)
+
+  eliminationRules       Json?
+  startListLocked        Boolean      @default(false)
+  active                 Boolean      @default(false)
+  currentEntryId         String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  entries                Entry[]
+  runs                   Run[]
+}
+
+model Horse {
+  id             String   @id @default(cuid())
+  internalNumber Int      @unique @default(autoincrement())
+  name           String
+  yearOfBirth    Int?
+  sex            HorseSex?
+  color          String?
+  owner          String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  entries        Entry[]
+}
+
+model Rider {
+  id             String   @id @default(cuid())
+  internalNumber Int      @unique @default(autoincrement())
+  name           String
+  phone          String?
+  country        String?
+  club           String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  entries        Entry[]
+}
+
+model Entry {
+  id            String       @id @default(cuid())
+  competitionId String
+  competition   Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  classId       String
+  showClass     ShowClass    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  horseId       String
+  horse         Horse        @relation(fields: [horseId], references: [id])
+  riderId       String
+  rider         Rider        @relation(fields: [riderId], references: [id])
+  startNumber   Int
+  orderIndex    Int          @default(0)
+  status        EntryStatus  @default(REGISTERED)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  runs          Run[]
+
+  @@unique([classId, startNumber])
+  @@unique([classId, horseId, riderId])
+}
+
+model Run {
+  id          String     @id @default(cuid())
+  entryId     String
+  entry       Entry      @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  classId     String
+  showClass   ShowClass  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  faults      Int        @default(0)
+  timeMs      Int        @default(0)
+  status      RunStatus  @default(PENDING)
+  approved    Boolean    @default(false)
+  judgedAt    DateTime?
+  details     Json?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Device {
+  id            String     @id @default(cuid())
+  name          String
+  type          DeviceType
+  online        Boolean    @default(true)
+  battery       Int        @default(100)
+  lastTriggerAt DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}

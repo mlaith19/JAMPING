@@ -1,0 +1,9 @@
+-- AlterTable
+ALTER TABLE "ShowClass" ADD COLUMN     "hasJumpOff" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "jumpOffAgainstClock" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "rankingMode" TEXT NOT NULL DEFAULT 'FAULTS_TIME',
+ADD COLUMN     "secondDisobedienceRule" TEXT NOT NULL DEFAULT 'FEI',
+ADD COLUMN     "tableType" TEXT NOT NULL DEFAULT 'A',
+ADD COLUMN     "timeLimit" INTEGER,
+ALTER COLUMN "allowedTime" DROP NOT NULL,
+ALTER COLUMN "allowedTime" DROP DEFAULT;

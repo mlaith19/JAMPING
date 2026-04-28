@@ -1,0 +1,127 @@
+{
+  "app": { "title": "קפיצות ראווה", "tagline": "שליטה בתחרות בזמן אמת" },
+  "nav": {
+    "dashboard": "לוח בקרה",
+    "competitions": "תחרויות",
+    "horses": "סוסים",
+    "riders": "רוכבים",
+    "entries": "הרשמות",
+    "startList": "סדר כניסה",
+    "live": "תחרות חיה",
+    "results": "תוצאות",
+    "devices": "חיישנים",
+    "overview": "סקירה",
+    "classes": "מקצים",
+    "settings": "הגדרות"
+  },
+  "common": {
+    "create": "צור", "save": "שמור", "cancel": "בטל", "delete": "מחק", "edit": "ערוך",
+    "search": "חיפוש", "loading": "טוען...", "name": "שם", "date": "תאריך", "location": "מקום",
+    "status": "סטטוס", "type": "סוג", "actions": "פעולות", "notes": "הערות", "language": "שפה",
+    "currency": "מטבע", "yes": "כן", "no": "לא", "back": "חזרה", "all": "הכל", "none": "ללא",
+    "select": "בחר...", "confirmDelete": "למחוק את הפריט הזה?"
+  },
+  "status": {
+    "DRAFT": "טיוטה", "ACTIVE": "פעיל", "FINISHED": "הסתיים",
+    "REGISTERED": "רשום", "SCRATCHED": "פרש", "DONE": "סיים",
+    "PENDING": "ממתין", "OK": "תקין", "RETIRED": "פרש", "ELIMINATED": "פסילה"
+  },
+  "competitions": {
+    "hubTiles": "בתחרות הזו",
+    "hubLiveHint": "מסך שיפוט + רשימת מקצים בצד",
+    "title": "תחרויות",
+    "subtitle": "ניהול אירועי קפיצות ראווה",
+    "new": "תחרות חדשה",
+    "create": "צור תחרות",
+    "name": "שם התחרות",
+    "noItems": "אין תחרויות עדיין. צור את הראשונה.",
+    "openDetail": "פתח"
+  },
+  "classes": {
+    "title": "מקצים / סבבים",
+    "add": "הוסף מקצה",
+    "edit": "ערוך מקצה",
+    "courseHeight": "גובה מסלול (ס\"מ)",
+    "category": "קטגוריה",
+    "allowedTime": "זמן מותר (שניות)",
+    "timeLimit": "זמן מקסימלי (שניות)",
+    "timeLimitAuto": "אוטומטי = מותר × מכפיל",
+    "tableType": "טבלה",
+    "tableTypes": { "A": "טבלה A", "C": "טבלה C" },
+    "rankingMode": "שיטת דירוג",
+    "rankingModes": {
+      "FAULTS_TIME": "עונשין ואז זמן",
+      "FAULTS_ONLY": "עונשין בלבד",
+      "TIME_ONLY": "זמן בלבד"
+    },
+    "hasJumpOff": "סיבוב הכרעה",
+    "jumpOffAgainstClock": "סיבוב הכרעה מול שעון",
+    "secondDisobedience": "סירוב שני",
+    "secondDisobedienceRules": {
+      "FEI": "FEI — פסילה",
+      "LOCAL": "מקומי — +8 עונשין"
+    },
+    "scoring": "סוג חישוב",
+    "knockdown": "הפלת מוט",
+    "refusal": "סירוב",
+    "scoringTypes": { "FAULTS_TIME": "עונשין ואז זמן", "TIME_ONLY": "זמן בלבד", "JUMP_OFF": "סיבוב הכרעה" },
+    "scoringRules": "כללי חישוב",
+    "rules": {
+      "knockdownFaults": "עונשין על הפלת מוט",
+      "firstRefusalFaults": "עונשין על סירוב ראשון",
+      "secondRefusalFaults": "עונשין על סירוב שני",
+      "maxRefusalsBeforeElimination": "סירובים מקסימליים לפני פסילה",
+      "timeFaultIntervalSeconds": "מרווח עונשי זמן (שניות)",
+      "timeFaultPoints": "נקודות עונש זמן",
+      "jumpOffTimeFaultIntervalSeconds": "מרווח עונשי זמן בסיבוב הכרעה (שניות)",
+      "jumpOffTimeFaultPoints": "נקודות עונש זמן בסיבוב הכרעה",
+      "timeLimitMultiplier": "מכפיל זמן מקסימלי"
+    }
+  },
+  "horses": {
+    "title": "סוסים", "subtitle": "מאגר סוסים ראשי", "new": "הוסף סוס",
+    "yearOfBirth": "שנת לידה", "sex": "מין", "color": "צבע", "owner": "בעלים", "internalNumber": "מס׳",
+    "sexOptions": { "MARE": "סוסה", "STALLION": "סוס", "GELDING": "מסורס" }
+  },
+  "riders": {
+    "title": "רוכבים", "subtitle": "מאגר רוכבים ראשי", "new": "הוסף רוכב",
+    "phone": "טלפון", "country": "מדינה", "club": "מועדון", "internalNumber": "מס׳"
+  },
+  "entries": {
+    "title": "הרשמה / שיוך",
+    "subtitle": "חיבור רוכבים, סוסים ומקצים",
+    "register": "רשום", "competition": "תחרות", "class": "מקצה",
+    "horse": "סוס", "rider": "רוכב", "startNumber": "מס׳ משתתף",
+    "scratch": "פרישה", "noClassSelected": "בחר תחרות ומקצה כדי להתחיל"
+  },
+  "startList": {
+    "title": "סדר כניסה", "subtitle": "סדר את הרוכבים למקצה",
+    "shuffle": "ערבוב", "lock": "נעל סדר", "unlock": "שחרר נעילה",
+    "send": "שלח לתחרות", "locked": "נעול", "unlocked": "פתוח"
+  },
+  "live": {
+    "title": "תחרות חיה", "selectClass": "בחר מקצה כדי להתחיל",
+    "startClass": "התחל מקצה", "endClass": "סיים מקצה", "nextRider": "רוכב הבא",
+    "armSensor": "הפעל חיישן זינוק", "manualStart": "זינוק ידני", "manualFinish": "סיום ידני",
+    "reset": "איפוס", "approve": "אשר תוצאה", "current": "רוכב נוכחי",
+    "noRider": "אין רוכב על המסלול",
+    "knockdown": "הפלת מוט +4", "refusal": "סירוב +4", "elimination": "פסילה",
+    "retired": "פרישה", "armed": "מוכן", "faults": "עונשין"
+  },
+  "results": {
+    "title": "תוצאות", "place": "מקום", "faults": "עונשין", "time": "זמן",
+    "exportPdf": "ייצוא PDF", "exportXlsx": "ייצוא אקסל", "publish": "פרסם"
+  },
+  "devices": {
+    "title": "חיישנים", "online": "מחובר", "offline": "מנותק",
+    "battery": "סוללה", "lastTrigger": "הפעלה אחרונה",
+    "test": "בדיקה", "reset": "איפוס", "add": "הוסף חיישן", "never": "מעולם לא"
+  },
+  "dashboard": {
+    "welcome": "ברוך השב",
+    "kpiCompetitions": "תחרויות", "kpiActive": "פעיל",
+    "kpiHorses": "סוסים", "kpiRiders": "רוכבים",
+    "recent": "תחרויות אחרונות",
+    "quickActions": "פעולות מהירות"
+  }
+}

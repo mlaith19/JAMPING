@@ -1,0 +1,128 @@
+{
+  "app": { "title": "Show Jumping", "tagline": "Live competition control" },
+  "nav": {
+    "dashboard": "Dashboard",
+    "competitions": "Competitions",
+    "horses": "Horses",
+    "riders": "Riders",
+    "entries": "Entries",
+    "startList": "Start List",
+    "live": "Live",
+    "results": "Results",
+    "devices": "Devices",
+    "overview": "Overview",
+    "classes": "Classes",
+    "settings": "Settings"
+  },
+  "common": {
+    "create": "Create", "save": "Save", "cancel": "Cancel", "delete": "Delete", "edit": "Edit",
+    "search": "Search", "loading": "Loading...", "name": "Name", "date": "Date", "location": "Location",
+    "status": "Status", "type": "Type", "actions": "Actions", "notes": "Notes", "language": "Language",
+    "currency": "Currency", "yes": "Yes", "no": "No", "back": "Back", "all": "All", "none": "None",
+    "select": "Select...", "confirmDelete": "Are you sure you want to delete this?"
+  },
+  "status": {
+    "DRAFT": "Draft", "ACTIVE": "Active", "FINISHED": "Finished",
+    "REGISTERED": "Registered", "SCRATCHED": "Scratched", "DONE": "Done",
+    "PENDING": "Pending", "OK": "OK", "RETIRED": "Retired", "ELIMINATED": "Eliminated"
+  },
+  "competitions": {
+    "hubTiles": "This competition",
+    "hubLiveHint": "Open cockpit + classes side panel",
+    "title": "Competitions",
+    "subtitle": "Create and manage show jumping events",
+    "new": "New Competition",
+    "create": "Create Competition",
+    "name": "Competition name",
+    "noItems": "No competitions yet. Create your first one.",
+    "openDetail": "Open"
+  },
+  "classes": {
+    "title": "Classes / Rounds",
+    "add": "Add Class",
+    "edit": "Edit Class",
+    "courseHeight": "Course height (cm)",
+    "category": "Category",
+    "allowedTime": "Allowed time (s)",
+    "timeLimit": "Time limit (s)",
+    "timeLimitAuto": "Auto = allowed × multiplier",
+    "tableType": "Table type",
+    "tableTypes": { "A": "Table A", "C": "Table C" },
+    "rankingMode": "Ranking mode",
+    "rankingModes": {
+      "FAULTS_TIME": "Faults then time",
+      "FAULTS_ONLY": "Faults only",
+      "TIME_ONLY": "Time only"
+    },
+    "hasJumpOff": "Has jump-off",
+    "jumpOffAgainstClock": "Jump-off against clock",
+    "secondDisobedience": "Second disobedience rule",
+    "secondDisobedienceRules": {
+      "FEI": "FEI — elimination",
+      "LOCAL": "Local — +8 faults"
+    },
+    "scoring": "Scoring",
+    "knockdown": "Knockdown",
+    "refusal": "Refusal",
+    "scoringTypes": { "FAULTS_TIME": "Faults then time", "TIME_ONLY": "Time only", "JUMP_OFF": "Jump-off" },
+    "scoringRules": "Scoring Rules",
+    "rules": {
+      "knockdownFaults": "Knockdown faults",
+      "firstRefusalFaults": "First refusal faults",
+      "secondRefusalFaults": "Second refusal faults",
+      "maxRefusalsBeforeElimination": "Max refusals before elimination",
+      "timeFaultIntervalSeconds": "Time fault interval (s)",
+      "timeFaultPoints": "Time fault points",
+      "jumpOffTimeFaultIntervalSeconds": "Jump-off time fault interval (s)",
+      "jumpOffTimeFaultPoints": "Jump-off time fault points",
+      "timeLimitMultiplier": "Time limit multiplier"
+    }
+  },
+  "horses": {
+    "title": "Horses", "subtitle": "Master horse registry", "new": "Add Horse",
+    "yearOfBirth": "Year of birth", "sex": "Sex", "color": "Color", "owner": "Owner",
+    "internalNumber": "No.",
+    "sexOptions": { "MARE": "Mare", "STALLION": "Stallion", "GELDING": "Gelding" }
+  },
+  "riders": {
+    "title": "Riders", "subtitle": "Master rider registry", "new": "Add Rider",
+    "phone": "Phone", "country": "Country", "club": "Club", "internalNumber": "No."
+  },
+  "entries": {
+    "title": "Entries / Registration",
+    "subtitle": "Connect riders, horses and classes",
+    "register": "Register", "competition": "Competition", "class": "Class",
+    "horse": "Horse", "rider": "Rider", "startNumber": "Start #",
+    "scratch": "Scratch", "noClassSelected": "Select a competition and class to start"
+  },
+  "startList": {
+    "title": "Start List", "subtitle": "Order riders for the class",
+    "shuffle": "Shuffle", "lock": "Lock Start List", "unlock": "Unlock",
+    "send": "Send to Competition", "locked": "Locked", "unlocked": "Unlocked"
+  },
+  "live": {
+    "title": "Live Competition", "selectClass": "Select a class to begin",
+    "startClass": "Start Class", "endClass": "End Class", "nextRider": "Next Rider",
+    "armSensor": "Arm Start Sensor", "manualStart": "Manual Start", "manualFinish": "Manual Finish",
+    "reset": "Reset", "approve": "Approve Result", "current": "Current Rider",
+    "noRider": "No rider on course",
+    "knockdown": "Knockdown +4", "refusal": "Refusal +4", "elimination": "Elimination",
+    "retired": "Retired", "armed": "ARMED", "faults": "Faults"
+  },
+  "results": {
+    "title": "Results", "place": "Place", "faults": "Faults", "time": "Time",
+    "exportPdf": "Export PDF", "exportXlsx": "Export Excel", "publish": "Publish"
+  },
+  "devices": {
+    "title": "Devices / Sensors", "online": "Online", "offline": "Offline",
+    "battery": "Battery", "lastTrigger": "Last trigger",
+    "test": "Test Trigger", "reset": "Reset", "add": "Add Device", "never": "Never"
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "kpiCompetitions": "Competitions", "kpiActive": "Active",
+    "kpiHorses": "Horses", "kpiRiders": "Riders",
+    "recent": "Recent competitions",
+    "quickActions": "Quick actions"
+  }
+}
