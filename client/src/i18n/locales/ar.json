@@ -8,11 +8,15 @@
     "entries": "التسجيلات",
     "startList": "قائمة الانطلاق",
     "live": "البث المباشر",
+    "judging": "التحكيم",
     "results": "النتائج",
+    "report": "التقرير",
+    "judges": "القضاة",
     "devices": "الأجهزة",
     "overview": "نظرة عامة",
     "classes": "الجولات",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "rules": "القواعد"
   },
   "common": {
     "create": "إنشاء", "save": "حفظ", "cancel": "إلغاء", "delete": "حذف", "edit": "تعديل",
@@ -41,6 +45,18 @@
     "title": "الجولات",
     "add": "إضافة جولة",
     "edit": "تعديل الجولة",
+    "competitionTable": "جدول المسابقة",
+    "timeSettings": "إعدادات الزمن",
+    "faultSettings": "إعدادات الأخطاء",
+    "refusalDisobedienceSettings": "إعدادات الرفض / العصيان",
+    "jumpOffSettings": "إعدادات الجولة الفاصلة",
+    "tableCNote": "الجدول C يعتمد على الزمن؛ الأخطاء تتحول إلى ثوانٍ.",
+    "validationWarnings": "تحذيرات التحقق",
+    "warnings": {
+      "tableARequiresAllowedTime": "الجدول A يتطلب وقتًا مسموحًا.",
+      "timeLimitMultiplierGreaterThanOne": "مضاعف الحد الزمني يجب أن يكون أكبر من 1.",
+      "feiSecondDisobedienceUsuallyOne": "في FEI 2026 غالبًا ما يكون الحد الأقصى للرفض = 1 (استبعاد عند العصيان الثاني)."
+    },
     "courseHeight": "ارتفاع المسار (سم)",
     "category": "الفئة",
     "allowedTime": "الوقت المسموح (ث)",
@@ -87,6 +103,14 @@
     "title": "الفرسان", "subtitle": "سجل الفرسان الرئيسي", "new": "إضافة فارس",
     "phone": "هاتف", "country": "الدولة", "club": "النادي", "internalNumber": "رقم"
   },
+  "judges": {
+    "subtitle": "سجل مركزي للقضاة",
+    "selected": "القضاة المختارون",
+    "emptyRegistry": "لا يوجد قضاة في السجل. أضفهم من لوحة التحكم > القضاة.",
+    "addFromRiders": "إضافة قاضٍ من سجل الفرسان",
+    "add": "إضافة قاضٍ",
+    "editJudge": "تعديل القاضي"
+  },
   "entries": {
     "title": "التسجيلات",
     "subtitle": "ربط الفرسان والخيول والجولات",
@@ -106,7 +130,27 @@
     "reset": "إعادة تعيين", "approve": "اعتماد النتيجة", "current": "الفارس الحالي",
     "noRider": "لا يوجد فارس على المسار",
     "knockdown": "إسقاط +4", "refusal": "رفض +4", "elimination": "استبعاد",
-    "retired": "تراجع", "armed": "جاهز", "faults": "أخطاء"
+    "retired": "تراجع", "armed": "جاهز", "faults": "أخطاء",
+    "displayScreen": "شاشة العرض", "classEntries": "مشاركو الجولة", "doubleClickToJudge": "انقر مرتين على الفارس/الحصان للتحميل للتحكيم", "activeNow": "حاليًا على المسار",
+    "manualModeOn": "الوضع اليدوي: مفعّل",
+    "manualModeOff": "الوضع اليدوي: متوقف",
+    "readiness": {
+      "title": "الجولة غير جاهزة",
+      "subtitle": "أصلح ما يلي قبل البدء",
+      "startAnyway": "ابدأ على أي حال",
+      "confirmStartAnyway": "هل أنت متأكد أنك تريد البدء مع إعدادات ناقصة؟",
+      "noEntries": "لم تتم إضافة مشاركين",
+      "startListUnlocked": "قائمة الانطلاق غير مقفلة",
+      "allowedTimeMissing": "الوقت المسموح مفقود للجدول A",
+      "noJudges": "لم يتم تعيين قضاة",
+      "startSensorOffline": "حساس START غير متصل",
+      "finishSensorOffline": "حساس FINISH غير متصل"
+    }
+  },
+  "display": {
+    "leaderboard": "الترتيب",
+    "fullscreen": "ملء الشاشة",
+    "fullscreenExit": "الخروج من ملء الشاشة"
   },
   "results": {
     "title": "النتائج", "place": "المركز", "faults": "أخطاء", "time": "الزمن",
@@ -115,7 +159,38 @@
   "devices": {
     "title": "الأجهزة", "online": "متصل", "offline": "غير متصل",
     "battery": "البطارية", "lastTrigger": "آخر تشغيل",
-    "test": "اختبار", "reset": "إعادة تعيين", "add": "إضافة جهاز", "never": "أبداً"
+    "test": "اختبار", "reset": "إعادة تعيين", "add": "إضافة جهاز", "never": "أبداً",
+    "deviceId": "معرف الجهاز",
+    "gateType": "نوع البوابة",
+    "ipAddress": "عنوان IP",
+    "wifiSignal": "إشارة WiFi",
+    "wifiQuality": "جودة WiFi",
+    "lastSeen": "آخر ظهور",
+    "lastEvent": "آخر حدث",
+    "uptime": "مدة التشغيل",
+    "firmwareVersion": "إصدار البرنامج الثابت",
+    "settings": "الإعدادات",
+    "detailsTitle": "تفاصيل الجهاز",
+    "connectionStatus": "حالة الاتصال",
+    "serverUrl": "رابط الخادم",
+    "wifiSsid": "اسم شبكة WiFi",
+    "wifiPassword": "كلمة مرور WiFi",
+    "debounceMs": "التأخير (ms)",
+    "restartDevice": "إعادة تشغيل الجهاز",
+    "resetConfig": "إعادة ضبط الإعدادات",
+    "confirmRestart": "هل أنت متأكد أنك تريد إعادة تشغيل هذا الجهاز؟",
+    "confirmResetConfig": "سيؤدي هذا إلى مسح WiFi/الإعدادات ووضع الجهاز في وضع الإعداد",
+    "messages": {
+      "configSaved": "تم حفظ إعدادات الجهاز",
+      "restartSent": "تم إرسال أمر إعادة التشغيل",
+      "resetSent": "تم إرسال أمر إعادة ضبط الإعدادات"
+    },
+    "errors": {
+      "deviceOffline": "الجهاز غير متصل",
+      "missingIp": "عنوان IP للجهاز مفقود",
+      "requestFailed": "فشل الطلب",
+      "espUnreachable": "لا يمكن الوصول إلى ESP"
+    }
   },
   "dashboard": {
     "welcome": "أهلاً بعودتك",

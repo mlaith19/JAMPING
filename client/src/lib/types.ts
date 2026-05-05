@@ -29,6 +29,11 @@ export interface ShowClass {
   courseHeight: number;
   category: string;
   tableType: TableType;
+  courseLengthMeters?: number | null;
+  horseSpeedMetersPerMinute?: number;
+  maxObstacles?: number;
+  tableCDisobedienceWithKnockdownSeconds?: number;
+  applyTimeAdditionToClock?: boolean;
   allowedTime: number | null;
   timeLimit: number | null;
   rankingMode: RankingMode;

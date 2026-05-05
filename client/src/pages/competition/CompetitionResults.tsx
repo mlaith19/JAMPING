@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import { Download, FileText, Send, Medal } from "lucide-react";
 import { motion } from "framer-motion";
 import { api, downloadUrl } from "../../lib/api";
@@ -34,13 +34,14 @@ export function CompetitionResults() {
   const { competitionId } = useOutletContext<OutletCtx>();
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const [classId, setClassId] = useState("");
+  const [searchParams] = useSearchParams();
+  const [classId, setClassId] = useState(searchParams.get("classId") ?? "");
 
-  const { data: classes = [] } = useQuery<ShowClass[]>({
-    queryKey: ["classes", competitionId],
-    queryFn: () => api.get(`/classes?competitionId=${competitionId}`),
-    enabled: !!competitionId,
-  });
+  useEffect(() => {
+    const fromUrl = searchParams.get("classId") ?? "";
+    if (fromUrl !== classId) setClassId(fromUrl);
+  }, [searchParams, classId]);
+
   const { data } = useQuery<ResultsResponse>({
     queryKey: ["results", classId],
     queryFn: () => api.get(`/results/${classId}`),
@@ -69,15 +70,6 @@ export function CompetitionResults() {
     <div>
       <div className="card mb-4">
         <div className="flex flex-wrap items-end gap-3">
-          <div className="flex-1 min-w-[200px]">
-            <label className="label">{t("entries.class")}</label>
-            <select className="select mt-1" value={classId} onChange={(e) => setClassId(e.target.value)}>
-              <option value="">{t("common.select")}</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
           {classId && (
             <div className="flex items-center gap-2">
               <a className="btn-ghost" href={downloadUrl(`/results/${classId}/export.xlsx`)} target="_blank" rel="noreferrer">

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
+  Scale,
   ArrowLeft,
   Home,
   ChevronDown,
@@ -12,9 +13,12 @@ import {
   Settings,
   LayoutGrid,
   ClipboardList,
-  ListOrdered,
+  ScrollText,
   Award,
   Cpu,
+  Radio,
+  ListOrdered,
+  FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
@@ -66,6 +70,20 @@ function GlobalSidebar() {
         >
           <LayoutDashboard className="w-4 h-4" />
           <span>{t("nav.dashboard")}</span>
+        </NavLink>
+        <NavLink
+          to="/judges"
+          className={({ isActive }) =>
+            clsx(
+              "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+              isActive
+                ? "bg-gradient-to-r from-neon-violet/[0.12] to-neon-cyan/[0.06] text-white border border-white/[0.08]"
+                : "text-white/65 hover:text-white hover:bg-white/[0.04]"
+            )
+          }
+        >
+          <Scale className="w-4 h-4" />
+          <span>{t("nav.judges")}</span>
         </NavLink>
       </nav>
       <div className="px-4 py-4 border-t border-white/[0.08]">
@@ -129,10 +147,14 @@ function CompetitionMiniSidebar() {
 
 const menuItems = [
   { to: "overview", key: "overview", icon: LayoutGrid },
+  { to: "judging", key: "judging", icon: Radio },
   { to: "classes", key: "classes", icon: ListChecks },
+  { to: "rules", key: "rules", icon: ScrollText },
   { to: "entries", key: "entries", icon: ClipboardList },
   { to: "start-list", key: "startList", icon: ListOrdered },
   { to: "results", key: "results", icon: Award },
+  { to: "report", key: "report", icon: FileText },
+  { to: "judges", key: "judges", icon: Scale },
   { to: "devices", key: "devices", icon: Cpu },
   { to: "settings", key: "settings", icon: Settings },
 ];
@@ -356,10 +378,6 @@ export function Sidebar() {
   const { pathname } = useLocation();
   const compMatch = pathname.match(/^\/competitions\/([^/]+)/);
   const competitionId = compMatch?.[1];
-  const isLivePage =
-    competitionId != null && /^\/competitions\/[^/]+\/live(\/|$)/.test(pathname);
-
-  if (competitionId && isLivePage) return <CompetitionLiveSidebar />;
-  if (competitionId) return <CompetitionMiniSidebar />;
+  if (competitionId) return null;
   return <GlobalSidebar />;
 }

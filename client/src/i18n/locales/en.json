@@ -8,11 +8,15 @@
     "entries": "Entries",
     "startList": "Start List",
     "live": "Live",
+    "judging": "Judging",
     "results": "Results",
+    "report": "Report",
+    "judges": "Judges",
     "devices": "Devices",
     "overview": "Overview",
     "classes": "Classes",
-    "settings": "Settings"
+    "settings": "Settings",
+    "rules": "Rules"
   },
   "common": {
     "create": "Create", "save": "Save", "cancel": "Cancel", "delete": "Delete", "edit": "Edit",
@@ -41,6 +45,18 @@
     "title": "Classes / Rounds",
     "add": "Add Class",
     "edit": "Edit Class",
+    "competitionTable": "Competition Table",
+    "timeSettings": "Time Settings",
+    "faultSettings": "Fault Settings",
+    "refusalDisobedienceSettings": "Refusal / Disobedience Settings",
+    "jumpOffSettings": "Jump-Off Settings",
+    "tableCNote": "Table C is time-based; faults are converted to seconds.",
+    "validationWarnings": "Validation Warnings",
+    "warnings": {
+      "tableARequiresAllowedTime": "Table A requires allowed time.",
+      "timeLimitMultiplierGreaterThanOne": "Time limit multiplier must be greater than 1.",
+      "feiSecondDisobedienceUsuallyOne": "FEI 2026 usually uses max refusals = 1 (second disobedience elimination)."
+    },
     "courseHeight": "Course height (cm)",
     "category": "Category",
     "allowedTime": "Allowed time (s)",
@@ -88,6 +104,14 @@
     "title": "Riders", "subtitle": "Master rider registry", "new": "Add Rider",
     "phone": "Phone", "country": "Country", "club": "Club", "internalNumber": "No."
   },
+  "judges": {
+    "subtitle": "Central judges registry",
+    "selected": "Selected judges",
+    "emptyRegistry": "No judges in registry. Add them from Dashboard > Judges.",
+    "addFromRiders": "Add judge from riders registry",
+    "add": "Add judge",
+    "editJudge": "Edit judge"
+  },
   "entries": {
     "title": "Entries / Registration",
     "subtitle": "Connect riders, horses and classes",
@@ -107,7 +131,27 @@
     "reset": "Reset", "approve": "Approve Result", "current": "Current Rider",
     "noRider": "No rider on course",
     "knockdown": "Knockdown +4", "refusal": "Refusal +4", "elimination": "Elimination",
-    "retired": "Retired", "armed": "ARMED", "faults": "Faults"
+    "retired": "Retired", "armed": "ARMED", "faults": "Faults",
+    "displayScreen": "Display Screen", "classEntries": "Class Entries", "doubleClickToJudge": "Double-click rider/horse to load for judging", "activeNow": "Active Now",
+    "manualModeOn": "Manual mode: ON",
+    "manualModeOff": "Manual mode: OFF",
+    "readiness": {
+      "title": "Class Not Ready",
+      "subtitle": "Fix the following before starting",
+      "startAnyway": "Start Anyway",
+      "confirmStartAnyway": "Are you sure you want to start with missing configuration?",
+      "noEntries": "No entries added",
+      "startListUnlocked": "Start list is not locked",
+      "allowedTimeMissing": "Allowed time missing for Table A",
+      "noJudges": "No judges assigned",
+      "startSensorOffline": "START sensor offline",
+      "finishSensorOffline": "FINISH sensor offline"
+    }
+  },
+  "display": {
+    "leaderboard": "RANK",
+    "fullscreen": "Full screen",
+    "fullscreenExit": "Exit full screen"
   },
   "results": {
     "title": "Results", "place": "Place", "faults": "Faults", "time": "Time",
@@ -116,7 +160,38 @@
   "devices": {
     "title": "Devices / Sensors", "online": "Online", "offline": "Offline",
     "battery": "Battery", "lastTrigger": "Last trigger",
-    "test": "Test Trigger", "reset": "Reset", "add": "Add Device", "never": "Never"
+    "test": "Test Trigger", "reset": "Reset", "add": "Add Device", "never": "Never",
+    "deviceId": "Device ID",
+    "gateType": "Gate Type",
+    "ipAddress": "IP Address",
+    "wifiSignal": "WiFi Signal",
+    "wifiQuality": "WiFi Quality",
+    "lastSeen": "Last Seen",
+    "lastEvent": "Last Event",
+    "uptime": "Uptime",
+    "firmwareVersion": "Firmware Version",
+    "settings": "Settings",
+    "detailsTitle": "Device Details",
+    "connectionStatus": "Connection Status",
+    "serverUrl": "Server URL",
+    "wifiSsid": "WiFi SSID",
+    "wifiPassword": "WiFi Password",
+    "debounceMs": "Debounce (ms)",
+    "restartDevice": "Restart Device",
+    "resetConfig": "Reset Config",
+    "confirmRestart": "Are you sure you want to restart this device?",
+    "confirmResetConfig": "This will erase WiFi/settings and put device in setup mode",
+    "messages": {
+      "configSaved": "Device configuration saved",
+      "restartSent": "Restart command sent",
+      "resetSent": "Reset config command sent"
+    },
+    "errors": {
+      "deviceOffline": "Device offline",
+      "missingIp": "Missing device IP address",
+      "requestFailed": "Request failed",
+      "espUnreachable": "ESP not reachable"
+    }
   },
   "dashboard": {
     "welcome": "Welcome back",

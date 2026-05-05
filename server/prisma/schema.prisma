@@ -73,6 +73,11 @@ model ShowClass {
   category               String       @default("Open")
 
   tableType              String       @default("A") // Table A / C
+  courseLengthMeters     Int?
+  horseSpeedMetersPerMinute Int       @default(350)
+  maxObstacles           Int          @default(12)
+  tableCDisobedienceWithKnockdownSeconds Int @default(6)
+  applyTimeAdditionToClock Boolean    @default(false)
   allowedTime            Int?         // seconds
   timeLimit              Int?         // seconds (auto = allowedTime * 2)
 

@@ -19,7 +19,13 @@ devicesRouter.get("/", async (_req, res) => {
 
 devicesRouter.post("/", async (req, res) => {
   const data = DeviceInput.parse(req.body);
-  const item = await prisma.device.create({ data });
+  const item = await prisma.device.create({
+    data: {
+      ...data,
+      // New devices start as offline until a real device status update arrives.
+      online: data.online ?? false,
+    },
+  });
   res.status(201).json(item);
 });
 
@@ -42,7 +48,8 @@ devicesRouter.post("/:id/test", async (req, res) => {
 devicesRouter.post("/:id/reset", async (req, res) => {
   const item = await prisma.device.update({
     where: { id: req.params.id },
-    data: { online: true, battery: 100, lastTriggerAt: null },
+    // Reset should not mark a device online by itself.
+    data: { online: false, battery: 100, lastTriggerAt: null },
   });
   broadcast("device:status", item);
   res.json(item);

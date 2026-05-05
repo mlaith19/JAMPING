@@ -14,6 +14,7 @@ import { resultsRouter } from "./rest/results.js";
 import { devicesRouter } from "./rest/devices.js";
 
 import { registerWs } from "./ws/index.js";
+import { prisma } from "./db.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -24,6 +25,14 @@ app.use(cors({ origin: CLIENT_ORIGIN }));
 app.use(express.json({ limit: "2mb" }));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true, time: Date.now() }));
+app.get("/api/health/database", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ ok: true, database: "up", time: Date.now() });
+  } catch (err: any) {
+    res.status(503).json({ ok: false, database: "down", error: err?.message ?? "DB unavailable" });
+  }
+});
 
 app.use("/api/competitions", competitionsRouter);
 app.use("/api/classes", classesRouter);

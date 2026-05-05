@@ -24,7 +24,13 @@ export class CompetitionTimer {
   start(at?: number) {
     if (this.state.running) return this.state;
     const now = at ?? Date.now();
-    this.state = { running: true, startedAt: now, stoppedAt: null, elapsedMs: 0 };
+    const resumedElapsed = this.state.elapsedMs > 0 ? this.state.elapsedMs : 0;
+    this.state = {
+      running: true,
+      startedAt: now - resumedElapsed,
+      stoppedAt: null,
+      elapsedMs: resumedElapsed,
+    };
     this.interval = setInterval(() => {
       if (!this.state.running || this.state.startedAt == null) return;
       this.state.elapsedMs = Date.now() - this.state.startedAt;
@@ -41,6 +47,18 @@ export class CompetitionTimer {
     this.state.elapsedMs = now - this.state.startedAt;
     if (this.interval) clearInterval(this.interval);
     this.interval = null;
+    return this.state;
+  }
+
+  addMs(ms: number): TimerState {
+    if (!Number.isFinite(ms) || ms <= 0) return this.state;
+    if (this.state.running && this.state.startedAt != null) {
+      this.state.startedAt -= ms;
+      this.state.elapsedMs += ms;
+    } else {
+      this.state.elapsedMs += ms;
+    }
+    this.tickHandler?.(this.state.elapsedMs);
     return this.state;
   }
 

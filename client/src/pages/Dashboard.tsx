@@ -1,11 +1,14 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Trophy, Activity, Users, Sparkles, ArrowRight } from "lucide-react";
+import { Trophy, Activity, Users, Sparkles, ArrowRight, Scale } from "lucide-react";
 import { motion } from "framer-motion";
 import { api } from "../lib/api";
 import type { Competition, Horse, Rider } from "../lib/types";
 import { StatusBadge } from "../components/ui/StatusBadge";
+
+const JUDGES_STORAGE_KEY = "judges-registry-v1";
 
 export function Dashboard() {
   const { t } = useTranslation();
@@ -23,6 +26,23 @@ export function Dashboard() {
   });
 
   const active = competitions.filter((c) => c.status === "ACTIVE").length;
+  const [judgesCount, setJudgesCount] = useState(0);
+
+  useEffect(() => {
+    const readCount = () => {
+      try {
+        const raw = localStorage.getItem(JUDGES_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        setJudgesCount(Array.isArray(parsed) ? parsed.length : 0);
+      } catch {
+        setJudgesCount(0);
+      }
+    };
+    readCount();
+    const onStorage = () => readCount();
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const tiles = [
     {
@@ -55,6 +75,16 @@ export function Dashboard() {
       iconColor: "text-neon-pink",
       blob: "bg-neon-pink",
     },
+    {
+      to: "/judges",
+      icon: Scale,
+      title: t("nav.judges"),
+      count: judgesCount,
+      sub: t("judges.subtitle"),
+      gradient: "from-neon-lime/[0.18] via-emerald-500/[0.10] to-transparent",
+      iconColor: "text-neon-lime",
+      blob: "bg-neon-lime",
+    },
   ];
 
   return (
@@ -74,7 +104,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {tiles.map((tile, idx) => (
           <motion.div
             key={tile.to}

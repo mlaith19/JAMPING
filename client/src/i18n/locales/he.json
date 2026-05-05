@@ -8,11 +8,15 @@
     "entries": "הרשמות",
     "startList": "סדר כניסה",
     "live": "תחרות חיה",
+    "judging": "שיפוט",
     "results": "תוצאות",
+    "report": "דוח",
+    "judges": "שופטים",
     "devices": "חיישנים",
     "overview": "סקירה",
     "classes": "מקצים",
     "settings": "הגדרות"
+    ,"rules": "חוקים"
   },
   "common": {
     "create": "צור", "save": "שמור", "cancel": "בטל", "delete": "מחק", "edit": "ערוך",
@@ -41,7 +45,26 @@
     "title": "מקצים / סבבים",
     "add": "הוסף מקצה",
     "edit": "ערוך מקצה",
+    "competitionTable": "טבלת תחרות",
+    "timeSettings": "הגדרות זמן",
+    "faultSettings": "הגדרות עונשין",
+    "refusalDisobedienceSettings": "הגדרות סירוב / אי-ציות",
+    "jumpOffSettings": "הגדרות סיבוב הכרעה",
+    "tableCNote": "טבלה C מבוססת זמן; עונשין מומרים לשניות.",
+    "validationWarnings": "אזהרות ולידציה",
+    "warnings": {
+      "tableARequiresAllowedTime": "בטבלה A חייבים זמן מותר.",
+      "timeLimitMultiplierGreaterThanOne": "מכפיל זמן מקסימלי חייב להיות גדול מ-1.",
+      "feiSecondDisobedienceUsuallyOne": "ב-FEI 2026 מקובל בדרך כלל מקסימום סירובים = 1 (פסילה באי-ציות שני)."
+    },
     "courseHeight": "גובה מסלול (ס\"מ)",
+    "courseLengthMeters": "אורך מסלול (מטר)",
+    "horseSpeedMetersPerMinute": "מהירות סוס (מטר/דקה)",
+    "allowedTimeCourseFormula": "נוסחה: אורך מסלול × 60 / מהירות סוס",
+    "maxObstacles": "מקסימום מכשולים",
+    "maxObstaclesHint": "מותר לבחור עד 15 מכשולים",
+    "timeAdditionSeconds": "תוספת זמן (שניות)",
+    "applyTimeAdditionToClock": "אם מסומן, תוספת הזמן תתווסף ישירות לשעון בעת Pause",
     "category": "קטגוריה",
     "allowedTime": "זמן מותר (שניות)",
     "timeLimit": "זמן מקסימלי (שניות)",
@@ -87,6 +110,14 @@
     "title": "רוכבים", "subtitle": "מאגר רוכבים ראשי", "new": "הוסף רוכב",
     "phone": "טלפון", "country": "מדינה", "club": "מועדון", "internalNumber": "מס׳"
   },
+  "judges": {
+    "subtitle": "מאגר שופטים מרכזי",
+    "selected": "שופטים שנבחרו",
+    "emptyRegistry": "אין שופטים במאגר. הוסף מלוח הבקרה > שופטים.",
+    "addFromRiders": "הוסף שופט מתוך מאגר הרוכבים",
+    "add": "הוסף שופט",
+    "editJudge": "עריכת שופט"
+  },
   "entries": {
     "title": "הרשמה / שיוך",
     "subtitle": "חיבור רוכבים, סוסים ומקצים",
@@ -106,7 +137,30 @@
     "reset": "איפוס", "approve": "אשר תוצאה", "current": "רוכב נוכחי",
     "noRider": "אין רוכב על המסלול",
     "knockdown": "הפלת מוט +4", "refusal": "סירוב +4", "elimination": "פסילה",
-    "retired": "פרישה", "armed": "מוכן", "faults": "עונשין"
+    "retired": "פרישה", "armed": "מוכן", "faults": "עונשין",
+    "pause": "השהה",
+    "pauseNotice": "השעון הושהה",
+    "timeAddition": "תוספת זמן",
+    "displayScreen": "מסך תצוגה", "classEntries": "משתתפי המקצה", "doubleClickToJudge": "לחיצה כפולה על רוכב/סוס תטעין לשיפוט", "activeNow": "כרגע במסלול",
+    "manualModeOn": "מצב ידני: פעיל",
+    "manualModeOff": "מצב ידני: כבוי",
+    "readiness": {
+      "title": "המקצה לא מוכן",
+      "subtitle": "תקן את הסעיפים הבאים לפני ההתחלה",
+      "startAnyway": "התחל בכל זאת",
+      "confirmStartAnyway": "האם אתה בטוח שברצונך להתחיל עם הגדרות חסרות?",
+      "noEntries": "לא נוספו משתתפים",
+      "startListUnlocked": "סדר הכניסה לא נעול",
+      "allowedTimeMissing": "חסר זמן מותר לטבלה A",
+      "noJudges": "לא שובצו שופטים",
+      "startSensorOffline": "חיישן START מנותק",
+      "finishSensorOffline": "חיישן FINISH מנותק"
+    }
+  },
+  "display": {
+    "leaderboard": "דירוג",
+    "fullscreen": "מסך מלא",
+    "fullscreenExit": "יציאה ממסך מלא"
   },
   "results": {
     "title": "תוצאות", "place": "מקום", "faults": "עונשין", "time": "זמן",
@@ -115,7 +169,38 @@
   "devices": {
     "title": "חיישנים", "online": "מחובר", "offline": "מנותק",
     "battery": "סוללה", "lastTrigger": "הפעלה אחרונה",
-    "test": "בדיקה", "reset": "איפוס", "add": "הוסף חיישן", "never": "מעולם לא"
+    "test": "בדיקה", "reset": "איפוס", "add": "הוסף חיישן", "never": "מעולם לא",
+    "deviceId": "מזהה מכשיר",
+    "gateType": "סוג שער",
+    "ipAddress": "כתובת IP",
+    "wifiSignal": "עוצמת WiFi",
+    "wifiQuality": "איכות WiFi",
+    "lastSeen": "נראה לאחרונה",
+    "lastEvent": "אירוע אחרון",
+    "uptime": "זמן פעולה",
+    "firmwareVersion": "גרסת קושחה",
+    "settings": "הגדרות",
+    "detailsTitle": "פרטי מכשיר",
+    "connectionStatus": "סטטוס חיבור",
+    "serverUrl": "כתובת שרת",
+    "wifiSsid": "שם רשת WiFi",
+    "wifiPassword": "סיסמת WiFi",
+    "debounceMs": "Debounce (ms)",
+    "restartDevice": "הפעל מחדש מכשיר",
+    "resetConfig": "איפוס הגדרות",
+    "confirmRestart": "האם אתה בטוח שברצונך להפעיל מחדש את המכשיר?",
+    "confirmResetConfig": "פעולה זו תמחק WiFi/הגדרות ותעביר את המכשיר למצב התקנה",
+    "messages": {
+      "configSaved": "הגדרות המכשיר נשמרו",
+      "restartSent": "פקודת הפעלה מחדש נשלחה",
+      "resetSent": "פקודת איפוס הגדרות נשלחה"
+    },
+    "errors": {
+      "deviceOffline": "המכשיר לא מחובר",
+      "missingIp": "חסרה כתובת IP למכשיר",
+      "requestFailed": "הבקשה נכשלה",
+      "espUnreachable": "לא ניתן להגיע ל-ESP"
+    }
   },
   "dashboard": {
     "welcome": "ברוך השב",

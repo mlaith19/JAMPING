@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import { Shuffle, Lock, Unlock, Send, GripVertical } from "lucide-react";
 import {
   DndContext,
@@ -19,7 +19,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { api } from "../../lib/api";
-import type { Competition, Entry, ShowClass } from "../../lib/types";
+import type { Competition, Entry } from "../../lib/types";
 
 interface OutletCtx {
   competitionId: string;
@@ -72,14 +72,15 @@ export function CompetitionStartList() {
   const { competitionId } = useOutletContext<OutletCtx>();
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const [classId, setClassId] = useState("");
+  const [searchParams] = useSearchParams();
+  const [classId, setClassId] = useState(searchParams.get("classId") ?? "");
   const [order, setOrder] = useState<Entry[]>([]);
 
-  const { data: classes = [] } = useQuery<ShowClass[]>({
-    queryKey: ["classes", competitionId],
-    queryFn: () => api.get(`/classes?competitionId=${competitionId}`),
-    enabled: !!competitionId,
-  });
+  useEffect(() => {
+    const fromUrl = searchParams.get("classId") ?? "";
+    if (fromUrl !== classId) setClassId(fromUrl);
+  }, [searchParams, classId]);
+
   const { data } = useQuery<StartListResponse>({
     queryKey: ["startlist", classId],
     queryFn: () => api.get(`/startlist/${classId}`),
@@ -127,18 +128,6 @@ export function CompetitionStartList() {
   return (
     <div>
       <div className="card mb-4">
-        <label className="label">{t("entries.class")}</label>
-        <select
-          className="select mt-1 max-w-md"
-          value={classId}
-          onChange={(e) => setClassId(e.target.value)}
-        >
-          <option value="">{t("common.select")}</option>
-          {classes.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-
         {classId && (
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button onClick={() => shuffle.mutate()} disabled={locked} className="btn-ghost">
