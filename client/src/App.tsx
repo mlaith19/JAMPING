@@ -18,6 +18,7 @@ import { CompetitionSettings } from "./pages/competition/CompetitionSettings";
 import { CompetitionJudges } from "./pages/competition/CompetitionJudges";
 import { CompetitionReport } from "./pages/competition/CompetitionReport";
 import { CompetitionClassRules } from "./pages/competition/CompetitionClassRules";
+import { CompetitionCourseMap } from "./pages/competition/CompetitionCourseMap";
 import { AudienceDisplay } from "./pages/display/AudienceDisplay";
 
 export function App() {
@@ -35,6 +36,7 @@ export function App() {
           <Route path="overview" element={<CompetitionOverview />} />
           <Route path="classes" element={<CompetitionClasses />} />
           <Route path="rules" element={<CompetitionClassRules />} />
+          <Route path="course-map" element={<CompetitionCourseMap />} />
           <Route path="entries" element={<CompetitionEntries />} />
           <Route path="start-list" element={<CompetitionStartList />} />
           <Route path="results" element={<CompetitionResults />} />

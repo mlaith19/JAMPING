@@ -9,6 +9,7 @@ const classTabs = [
   { to: "live", key: "live" },
   { to: "settings", key: "settings" },
   { to: "rules", key: "rules" },
+  { to: "course-map", key: "courseMap" },
   { to: "entries", key: "entries" },
   { to: "start-list", key: "startList" },
   { to: "results", key: "results" },
@@ -23,7 +24,7 @@ export function CompetitionLayout() {
   const { pathname } = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const classId = searchParams.get("classId") ?? "";
-  const inCompetitionWorkspace = /^\/competitions\/[^/]+\/(settings|rules|entries|start-list|live|results|report|judges|devices)(\/|$)/.test(pathname);
+  const inCompetitionWorkspace = /^\/competitions\/[^/]+\/(settings|rules|course-map|entries|start-list|live|results|report|judges|devices)(\/|$)/.test(pathname);
   const classQuery = classId ? `?classId=${encodeURIComponent(classId)}` : "";
   const { data: comp } = useQuery<Competition>({
     queryKey: ["competition", id],
@@ -61,6 +62,8 @@ export function CompetitionLayout() {
                     ? t("nav.report")
                     : tab.key === "judges"
                     ? t("nav.judges")
+                    : tab.key === "courseMap"
+                    ? t("nav.courseMap")
                     : tab.key === "startList"
                     ? t("nav.startList")
                     : t(`nav.${tab.key}`)}

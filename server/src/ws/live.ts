@@ -22,6 +22,9 @@ interface LiveRoomState {
   addedTimeSeconds: number;
   status: "PENDING" | "OK" | "RETIRED" | "ELIMINATED";
   timer: CompetitionTimer;
+  accumulatorPoints: number;
+  accumulatorPenalties: number;
+  accumulatorObstacles: Record<number, { outcome: "CLEAR" | "KNOCKDOWN"; attempt: "NORMAL" | "JOKER" | "JOKER1" | "JOKER2"; notes?: string }>;
 }
 
 const rooms = new Map<string, LiveRoomState>();
@@ -70,6 +73,9 @@ function getOrCreateRoom(io: Server, classId: string): LiveRoomState {
     addedTimeSeconds: 0,
     status: "PENDING",
     timer,
+    accumulatorPoints: 0,
+    accumulatorPenalties: 0,
+    accumulatorObstacles: {},
   };
   rooms.set(classId, r);
   return r;
@@ -83,6 +89,9 @@ function resetRun(room: LiveRoomState) {
   room.status = "PENDING";
   room.sensorArmed = false;
   room.timer.reset();
+  room.accumulatorPoints = 0;
+  room.accumulatorPenalties = 0;
+  room.accumulatorObstacles = {};
 }
 
 function resetJumpOff(room: LiveRoomState) {
@@ -102,6 +111,38 @@ function readRunDetails(details: unknown): {
     refusalCount: typeof d.refusalCount === "number" ? d.refusalCount : undefined,
     isJumpOff: typeof d.isJumpOff === "boolean" ? d.isJumpOff : undefined,
   };
+}
+
+function calculateAccumulatorPoints(
+  obstacleCount: number,
+  hasJoker: boolean,
+  jokerType: "NONE" | "SINGLE_JOKER" | "DOUBLE_JOKER",
+  obstacles: Record<number, { outcome: "CLEAR" | "KNOCKDOWN"; attempt: "NORMAL" | "JOKER" | "JOKER1" | "JOKER2" }>
+): number {
+  let total = 0;
+  for (let i = 1; i <= obstacleCount; i++) {
+    const o = obstacles[i];
+    if (!o) continue;
+    const isLast = i === obstacleCount;
+    if (!isLast || !hasJoker) {
+      if (o.outcome === "CLEAR") total += i;
+      continue;
+    }
+    if (o.attempt === "NORMAL") {
+      if (o.outcome === "CLEAR") total += i;
+      continue;
+    }
+    if (jokerType === "SINGLE_JOKER" || o.attempt === "JOKER") {
+      const pts = i * 2;
+      total += o.outcome === "CLEAR" ? pts : -pts;
+      continue;
+    }
+    if (jokerType === "DOUBLE_JOKER") {
+      const pts = o.attempt === "JOKER1" ? i * 1.5 : i * 2;
+      total += o.outcome === "CLEAR" ? pts : -pts;
+    }
+  }
+  return total;
 }
 
 async function getJumpOffCandidates(classId: string): Promise<string[]> {
@@ -187,6 +228,11 @@ export function registerLive(io: Server, socket: Socket) {
       addedTimeSeconds: room.addedTimeSeconds,
       status: room.status,
       timer: room.timer.getState(),
+      accumulator: {
+        points: room.accumulatorPoints,
+        penalties: room.accumulatorPenalties,
+        obstacles: room.accumulatorObstacles,
+      },
     });
   });
 
@@ -430,7 +476,9 @@ export function registerLive(io: Server, socket: Socket) {
 
       if (type === "KNOCKDOWN") {
         room.knockdownCount += 1;
-        room.faults += getKnockdownFaults(cls);
+        if ((cls as any).competitionType !== "ACCUMULATOR") {
+          room.faults += getKnockdownFaults(cls);
+        }
       } else if (type === "REFUSAL") {
         room.refusalCount += 1;
         room.faults += getRefusalFaults(cls, room.refusalCount);
@@ -455,6 +503,46 @@ export function registerLive(io: Server, socket: Socket) {
     }
   );
 
+  socket.on(
+    "accumulator:obstacle",
+    async ({
+      classId,
+      obstacleNumber,
+      outcome,
+      attempt,
+      notes,
+    }: {
+      classId: string;
+      obstacleNumber: number;
+      outcome: "CLEAR" | "KNOCKDOWN";
+      attempt?: "NORMAL" | "JOKER" | "JOKER1" | "JOKER2";
+      notes?: string;
+    }) => {
+      const room = getOrCreateRoom(io, classId);
+      const cls = await prisma.showClass.findUnique({ where: { id: classId } });
+      if (!cls || (cls as any).competitionType !== "ACCUMULATOR") return;
+      const obstacleCount = (cls as any).numberOfObstacles ?? 10;
+      if (obstacleNumber < 1 || obstacleNumber > obstacleCount) return;
+      const isLast = obstacleNumber === obstacleCount;
+      const normalizedAttempt = isLast ? attempt ?? "NORMAL" : "NORMAL";
+      room.accumulatorObstacles[obstacleNumber] = { outcome, attempt: normalizedAttempt, notes };
+      room.accumulatorPoints = calculateAccumulatorPoints(
+        obstacleCount,
+        !!(cls as any).hasJoker,
+        ((cls as any).jokerType ?? "NONE") as "NONE" | "SINGLE_JOKER" | "DOUBLE_JOKER",
+        room.accumulatorObstacles
+      );
+      room.accumulatorPenalties = room.faults;
+      io.to(`class:${classId}`).emit("accumulator:updated", {
+        classId,
+        points: room.accumulatorPoints,
+        penalties: room.accumulatorPenalties,
+        finalScore: room.accumulatorPoints - room.accumulatorPenalties,
+        obstacles: room.accumulatorObstacles,
+      });
+    }
+  );
+
   socket.on("result:approve", async ({ classId }: { classId: string }) => {
     const room = getOrCreateRoom(io, classId);
     if (!room.currentEntryId) return;
@@ -473,6 +561,12 @@ export function registerLive(io: Server, socket: Socket) {
           knockdownCount: room.knockdownCount,
           refusalCount: room.refusalCount,
           isJumpOff,
+          accumulator: {
+            points: room.accumulatorPoints,
+            penalties: room.accumulatorPenalties,
+            finalScore: room.accumulatorPoints - room.accumulatorPenalties,
+            obstacles: room.accumulatorObstacles,
+          },
         },
       },
     });

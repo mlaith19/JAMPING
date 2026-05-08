@@ -7,6 +7,12 @@ export type HorseSex = "MARE" | "STALLION" | "GELDING";
 export type TableType = "A" | "C";
 export type RankingMode = "FAULTS_TIME" | "FAULTS_ONLY" | "TIME_ONLY";
 export type SecondDisobedienceRule = "FEI" | "LOCAL";
+export type ClassCompetitionType = "STANDARD" | "ACCUMULATOR";
+export type AccumulatorMode =
+  | "AGAINST_CLOCK_NO_JUMP_OFF"
+  | "AGAINST_CLOCK_WITH_JUMP_OFF"
+  | "NOT_AGAINST_CLOCK_WITH_JUMP_OFF";
+export type JokerType = "NONE" | "SINGLE_JOKER" | "DOUBLE_JOKER";
 
 export interface Competition {
   id: string;
@@ -55,6 +61,12 @@ export interface ShowClass {
   startListLocked: boolean;
   active: boolean;
   currentEntryId?: string | null;
+  competitionType?: ClassCompetitionType;
+  numberOfObstacles?: 6 | 8 | 10;
+  accumulatorMode?: AccumulatorMode;
+  hasJoker?: boolean;
+  jokerType?: JokerType;
+  maxPoints?: number;
   _count?: { entries: number };
 }
 
@@ -124,4 +136,7 @@ export interface ResultRow {
   status: RunStatus | string;
   approved: boolean;
   place?: number | null;
+  points?: number | null;
+  penalties?: number | null;
+  finalScore?: number | null;
 }

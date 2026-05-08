@@ -26,6 +26,12 @@ export function Topbar() {
     return match?.[1] ?? "";
   })();
 
+  function competitionTabToNavKey(tab: string) {
+    if (tab === "start-list") return "startList";
+    if (tab === "course-map") return "courseMap";
+    return tab;
+  }
+
   const { data: competition } = useQuery<Competition>({
     queryKey: ["competition", id],
     queryFn: () => api.get(`/competitions/${id}`),
@@ -73,7 +79,7 @@ export function Topbar() {
             </Link>
             {currentTab && (
               <Link to={currentTabTo} className="badge-cyan !h-9 !px-3 !rounded-xl shrink-0">
-                {t(`nav.${currentTab}`, currentTab.toUpperCase())}
+                {t(`nav.${competitionTabToNavKey(currentTab)}`, currentTab.toUpperCase())}
               </Link>
             )}
           </>

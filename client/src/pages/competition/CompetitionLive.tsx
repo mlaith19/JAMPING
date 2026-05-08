@@ -55,6 +55,13 @@ interface LiveState {
   elapsedMs: number;
   running: boolean;
   addedTimeSeconds: number;
+  accumulatorPoints: number;
+  accumulatorPenalties: number;
+  accumulatorFinalScore: number;
+  accumulatorObstacles: Record<
+    number,
+    { outcome: "CLEAR" | "KNOCKDOWN"; attempt: "NORMAL" | "JOKER" | "JOKER1" | "JOKER2"; notes?: string }
+  >;
 }
 
 const initState: LiveState = {
@@ -67,6 +74,10 @@ const initState: LiveState = {
   elapsedMs: 0,
   running: false,
   addedTimeSeconds: 0,
+  accumulatorPoints: 0,
+  accumulatorPenalties: 0,
+  accumulatorFinalScore: 0,
+  accumulatorObstacles: {},
 };
 
 export function CompetitionLive() {
@@ -109,6 +120,12 @@ export function CompetitionLive() {
   });
 
   const cls = classDetail;
+  const isAccumulator = cls?.competitionType === "ACCUMULATOR";
+  const obstacleCount = cls?.numberOfObstacles ?? 10;
+  const showClock =
+    !isAccumulator ||
+    cls?.accumulatorMode === "AGAINST_CLOCK_NO_JUMP_OFF" ||
+    cls?.accumulatorMode === "AGAINST_CLOCK_WITH_JUMP_OFF";
 
   useEffect(() => {
     if (!classId) return;
@@ -121,6 +138,7 @@ export function CompetitionLive() {
     const onState = (p: any) => {
       if (p.classId !== classId) return;
       setState((prev) => ({
+        ...(p.status === "ELIMINATED" || p.status === "RETIRED" ? { running: false } : {}),
         ...prev,
         sensorArmed: p.sensorArmed ?? prev.sensorArmed,
         faults: p.faults ?? prev.faults,
@@ -130,11 +148,22 @@ export function CompetitionLive() {
         elapsedMs: p.timer?.elapsedMs ?? prev.elapsedMs,
         running: p.timer?.running ?? prev.running,
         addedTimeSeconds: p.addedTimeSeconds ?? prev.addedTimeSeconds,
+        accumulatorPoints: p.accumulator?.points ?? prev.accumulatorPoints,
+        accumulatorPenalties: p.accumulator?.penalties ?? prev.accumulatorPenalties,
+        accumulatorFinalScore:
+          p.accumulator?.finalScore ??
+          (p.accumulator?.points ?? prev.accumulatorPoints) - (p.accumulator?.penalties ?? prev.accumulatorPenalties),
+        accumulatorObstacles: p.accumulator?.obstacles ?? prev.accumulatorObstacles,
       }));
     };
     const onTick = (p: any) => {
       if (p.classId !== classId) return;
-      setState((prev) => ({ ...prev, elapsedMs: p.elapsedMs, running: true }));
+      setState((prev) => {
+        if (prev.status === "ELIMINATED" || prev.status === "RETIRED") {
+          return { ...prev, running: false };
+        }
+        return { ...prev, elapsedMs: p.elapsedMs, running: true };
+      });
     };
     const onTimerStarted = (p: any) => {
       if (p.classId !== classId) return;
@@ -183,6 +212,10 @@ export function CompetitionLive() {
         running: false,
         addedTimeSeconds: 0,
         sensorArmed: false,
+        accumulatorPoints: 0,
+        accumulatorPenalties: 0,
+        accumulatorFinalScore: 0,
+        accumulatorObstacles: {},
       }));
       inv();
     };
@@ -194,6 +227,20 @@ export function CompetitionLive() {
         status: p.status,
         knockdownCount: p.knockdownCount ?? prev.knockdownCount,
         refusalCount: p.refusalCount ?? prev.refusalCount,
+        running: p.status === "ELIMINATED" || p.status === "RETIRED" ? false : prev.running,
+        accumulatorPenalties: p.faults ?? prev.accumulatorPenalties,
+        accumulatorFinalScore: prev.accumulatorPoints - (p.faults ?? prev.accumulatorPenalties),
+      }));
+    };
+    const onAccumulatorUpdated = (p: any) => {
+      if (p.classId !== classId) return;
+      setState((prev) => ({
+        ...prev,
+        accumulatorPoints: p.points ?? prev.accumulatorPoints,
+        accumulatorPenalties: p.penalties ?? prev.accumulatorPenalties,
+        accumulatorFinalScore:
+          p.finalScore ?? (p.points ?? prev.accumulatorPoints) - (p.penalties ?? prev.accumulatorPenalties),
+        accumulatorObstacles: p.obstacles ?? prev.accumulatorObstacles,
       }));
     };
     const onApproved = () => {
@@ -246,6 +293,7 @@ export function CompetitionLive() {
     s.on("jumpoff:started", onJumpOffStarted);
     s.on("jumpoff:not_required", onJumpOffNotRequired);
     s.on("jumpoff:completed", onJumpOffCompleted);
+    s.on("accumulator:updated", onAccumulatorUpdated);
 
     return () => {
       s.emit("class:leave", { classId });
@@ -264,6 +312,7 @@ export function CompetitionLive() {
       s.off("jumpoff:started", onJumpOffStarted);
       s.off("jumpoff:not_required", onJumpOffNotRequired);
       s.off("jumpoff:completed", onJumpOffCompleted);
+      s.off("accumulator:updated", onAccumulatorUpdated);
     };
   }, [classId, qc, t]);
 
@@ -397,6 +446,14 @@ export function CompetitionLive() {
     showNotice(t("live.startingJumpOff", "Preparing Jump-Off..."), "info");
   }
 
+  function submitAccumulatorObstacle(
+    obstacleNumber: number,
+    outcome: "CLEAR" | "KNOCKDOWN",
+    attempt: "NORMAL" | "JOKER" | "JOKER1" | "JOKER2" = "NORMAL"
+  ) {
+    emit("accumulator:obstacle", { obstacleNumber, outcome, attempt });
+  }
+
   return (
     <div>
       {notice && (
@@ -500,15 +557,22 @@ export function CompetitionLive() {
 
                 <div className="mt-6 flex items-center justify-center">
                   <motion.div
-                    animate={{ scale: state.running ? [1, 1.02, 1] : 1 }}
-                    transition={{ duration: 1, repeat: state.running ? Infinity : 0 }}
+                    animate={{ scale: showClock && state.running ? [1, 1.02, 1] : 1 }}
+                    transition={{ duration: 1, repeat: showClock && state.running ? Infinity : 0 }}
                     className={`text-7xl md:text-8xl font-mono font-bold timer-glow tracking-tight ${
                       overTime ? "text-red-400" : "text-white"
                     }`}
                   >
-                    {fmt(state.elapsedMs)}
+                    {showClock ? fmt(state.elapsedMs) : String(state.accumulatorFinalScore)}
                   </motion.div>
                 </div>
+                {isAccumulator && (
+                  <div className="mt-2 text-center text-sm text-white/70">
+                    {t("live.accumulator.finalScore", "Final Score")} = {state.accumulatorPoints} -{" "}
+                    {state.accumulatorPenalties} ={" "}
+                    <span className="font-bold text-neon-lime">{state.accumulatorFinalScore}</span>
+                  </div>
+                )}
 
                 <div className="mt-4 flex items-center justify-center gap-3">
                   <div className="glass px-5 py-2 text-center">
@@ -575,21 +639,21 @@ export function CompetitionLive() {
                 </button>
                 <button
                   onClick={() => emit("timer:pause")}
-                  disabled={!state.running}
+                  disabled={!state.running || !showClock}
                   className="btn-warn"
                 >
                   <Pause className="w-4 h-4" /> {t("live.pause", "Pause")}
                 </button>
                 <button
                   onClick={() => emit("timer:manual_start")}
-                  disabled={!state.currentEntry || state.running}
+                  disabled={!state.currentEntry || state.running || !showClock}
                   className="btn-ghost"
                 >
                   <Play className="w-4 h-4" /> {t("live.manualStart")}
                 </button>
                 <button
                   onClick={() => emit("timer:manual_stop")}
-                  disabled={!state.running}
+                  disabled={!state.running || !showClock}
                   className="btn-ghost"
                 >
                   <StopCircle className="w-4 h-4" /> {t("live.manualFinish")}
@@ -618,10 +682,18 @@ export function CompetitionLive() {
               </div>
               <div className="glass px-3 py-2 flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">
-                  {t("live.totalFaults", "Total Faults")}
+                  {isAccumulator ? t("live.accumulator.penalties", "Penalties") : t("live.totalFaults", "Total Faults")}
                 </span>
                 <span className="text-xl font-display font-bold text-white">{state.faults}</span>
               </div>
+              {isAccumulator && (
+                <div className="glass px-3 py-2 flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">
+                    {t("live.accumulator.points", "Points")}
+                  </span>
+                  <span className="text-xl font-display font-bold text-neon-lime">{state.accumulatorPoints}</span>
+                </div>
+              )}
               <div className="glass px-3 py-2 flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">
                   {t("common.status")}
@@ -641,6 +713,57 @@ export function CompetitionLive() {
                 </span>
               </div>
             </div>
+
+            {isAccumulator && (
+              <div className="card space-y-3">
+                <div className="text-sm font-semibold text-white/85">
+                  {t("live.accumulator.obstacles", "Accumulator obstacles")}
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2">
+                  {Array.from({ length: obstacleCount }).map((_, idx) => {
+                    const n = idx + 1;
+                    const isLast = n === obstacleCount;
+                    const current = state.accumulatorObstacles[n];
+                    return (
+                      <div key={n} className="rounded-xl border border-white/10 bg-white/[0.03] p-2 space-y-2">
+                        <div className="text-xs text-white/70">#{n}</div>
+                        <div className="grid grid-cols-2 gap-1">
+                          <button className="btn-success !h-8 !text-xs" onClick={() => submitAccumulatorObstacle(n, "CLEAR")}>
+                            {t("live.accumulator.clear", "Clear")}
+                          </button>
+                          <button className="btn-danger !h-8 !text-xs" onClick={() => submitAccumulatorObstacle(n, "KNOCKDOWN")}>
+                            {t("live.accumulator.knockdown", "Knockdown")}
+                          </button>
+                        </div>
+                        {isLast && cls?.hasJoker && (
+                          <div className="grid grid-cols-1 gap-1">
+                            <button className="btn-ghost !h-8 !text-xs" onClick={() => submitAccumulatorObstacle(n, "CLEAR", "NORMAL")}>
+                              {t("live.accumulator.normal", "Normal")}
+                            </button>
+                            {cls.jokerType === "SINGLE_JOKER" && (
+                              <button className="btn-primary !h-8 !text-xs" onClick={() => submitAccumulatorObstacle(n, "CLEAR", "JOKER")}>
+                                {t("live.accumulator.joker", "Joker")}
+                              </button>
+                            )}
+                            {cls.jokerType === "DOUBLE_JOKER" && (
+                              <>
+                                <button className="btn-primary !h-8 !text-xs" onClick={() => submitAccumulatorObstacle(n, "CLEAR", "JOKER1")}>
+                                  {t("live.accumulator.joker1", "Joker 1")}
+                                </button>
+                                <button className="btn-primary !h-8 !text-xs" onClick={() => submitAccumulatorObstacle(n, "CLEAR", "JOKER2")}>
+                                  {t("live.accumulator.joker2", "Joker 2")}
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                        {current && <div className="text-[10px] text-white/55">{current.attempt} / {current.outcome}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <button
@@ -699,10 +822,15 @@ export function CompetitionLive() {
                     <div className="text-[11px] text-white/50 truncate">{r.horseName}</div>
                     <div className="flex justify-between gap-2 pt-1 text-[11px]">
                       <span className="text-white/55">
-                        {t("results.faults")}: <span className="font-mono text-fuchsia-300">{r.faults ?? "—"}</span>
+                        {isAccumulator
+                          ? `${t("live.accumulator.finalScore", "Final Score")}: `
+                          : `${t("results.faults")}: `}
+                        <span className="font-mono text-fuchsia-300">
+                          {isAccumulator ? (r.finalScore ?? "—") : (r.faults ?? "—")}
+                        </span>
                       </span>
                       <span className="font-mono text-white/80 tabular-nums">
-                        {r.timeMs != null ? `${(r.timeMs / 1000).toFixed(2)}` : "—"}
+                        {showClock && r.timeMs != null ? `${(r.timeMs / 1000).toFixed(2)}` : "—"}
                       </span>
                     </div>
                   </div>

@@ -9,6 +9,11 @@ export const resultsRouter = Router();
 function readDetails(details: unknown): {
   knockdownCount?: number;
   refusalCount?: number;
+  accumulator?: {
+    points?: number;
+    penalties?: number;
+    finalScore?: number;
+  };
 } {
   if (!details || typeof details !== "object") return {};
   const d = details as Record<string, unknown>;
@@ -17,6 +22,10 @@ function readDetails(details: unknown): {
       typeof d.knockdownCount === "number" ? d.knockdownCount : undefined,
     refusalCount:
       typeof d.refusalCount === "number" ? d.refusalCount : undefined,
+    accumulator:
+      d.accumulator && typeof d.accumulator === "object"
+        ? (d.accumulator as { points?: number; penalties?: number; finalScore?: number })
+        : undefined,
   };
 }
 
@@ -35,7 +44,20 @@ async function getRankedResults(classId: string) {
   });
   if (!cls) return null;
 
-  const rows = cls.entries.map((e) => {
+  const rows: Array<{
+    entryId: string;
+    startNumber: number;
+    horseName: string;
+    riderName: string;
+    faults: number | null;
+    timeMs: number | null;
+    status: string;
+    approved: boolean;
+    points?: number | null;
+    penalties?: number | null;
+    finalScore?: number | null;
+    place?: number | null;
+  }> = cls.entries.map((e) => {
     const run = e.runs[0];
     if (!run) {
       return {
@@ -50,7 +72,7 @@ async function getRankedResults(classId: string) {
       };
     }
 
-    const { knockdownCount, refusalCount } = readDetails(run.details);
+    const { knockdownCount, refusalCount, accumulator } = readDetails(run.details);
 
     const calc = calculateRunResult({
       obstacleFaults: run.faults,
@@ -72,10 +94,34 @@ async function getRankedResults(classId: string) {
       timeMs: calc.timeMs,
       status: calc.status,
       approved: run.approved ?? false,
+      points: accumulator?.points ?? null,
+      penalties: accumulator?.penalties ?? null,
+      finalScore: accumulator?.finalScore ?? null,
     };
   });
 
-  const ranked = rankRuns(rows, cls.scoringType);
+  let ranked = rankRuns(rows, cls.scoringType);
+  if ((cls as any).competitionType === "ACCUMULATOR") {
+    const againstClock =
+      (cls as any).accumulatorMode === "AGAINST_CLOCK_NO_JUMP_OFF" ||
+      (cls as any).accumulatorMode === "AGAINST_CLOCK_WITH_JUMP_OFF";
+    const valid = [...rows].filter((r) => r.status === "OK" && typeof r.finalScore === "number");
+    valid.sort((a, b) => {
+      const scoreDiff = (b.finalScore ?? -9999) - (a.finalScore ?? -9999);
+      if (scoreDiff !== 0) return scoreDiff;
+      if (againstClock) return (a.timeMs ?? Number.MAX_SAFE_INTEGER) - (b.timeMs ?? Number.MAX_SAFE_INTEGER);
+      return (a.startNumber ?? 0) - (b.startNumber ?? 0);
+    });
+    const placed = valid.map((r, idx) => {
+      if (!againstClock && idx > 0 && r.finalScore === valid[idx - 1].finalScore) {
+        return { ...r, place: valid[idx - 1].place ?? idx + 1 };
+      }
+      return { ...r, place: idx + 1 };
+    });
+    const placedIds = new Set(placed.map((p) => p.entryId));
+    const tail = rows.filter((r) => !placedIds.has(r.entryId)).map((r) => ({ ...r, place: null }));
+    ranked = [...placed, ...tail];
+  }
   return { class: cls, rows: ranked };
 }
 

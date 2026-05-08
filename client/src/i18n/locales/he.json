@@ -16,7 +16,57 @@
     "overview": "סקירה",
     "classes": "מקצים",
     "settings": "הגדרות"
-    ,"rules": "חוקים"
+    ,"rules": "חוקים",
+    "courseMap": "מפה"
+  },
+  "courseMap": {
+    "title": "מפת מסלול",
+    "palette": "מכשולים",
+    "paletteHint": "גרור סוג מכשול אל תוך המפה. גרור מכשול מהמפה חזרה לסרגל כדי למחוק. לחץ על מכשול לעריכת מספר, צבע, סיבוב ומכשול כפול.",
+    "dropToDelete": "שחרר כאן — המכשול יוסר מהמפה",
+    "rotation": "סיבוב",
+    "rotationPresetsHint": "בחר זווית קבועה (כל 45°) — המכשול מסתובב במקום סביב מרכזו.",
+    "dragToMap": "גרור למפה",
+    "dropHint": "גרור מכשול מהסרגל כדי לבנות את הזירה",
+    "view3dHint": "תצוגה תלת־ממדית: גרור בעכבר (או אצבע) לסיבוב המצלמה, גלגלת לזום. הזז מכשולים עם הקובייה האפורה ליד המכשול; כך גם START/FINISH.",
+    "arenaSettings": "הגדרות זירה",
+    "autoBuild": "בנה אוטומטית",
+    "arenaWidth": "רוחב זירה (מ׳)",
+    "arenaLength": "אורך זירה (מ׳)",
+    "obstacleCount": "כמות מכשולים",
+    "obstacleHeight": "גובה מכשול (מ׳)",
+    "heightLimitHint": "מגבלת FEI: גובה העמודים (Standards) לא יעלה מעל 1.75 מ׳.",
+    "allowedTypes": "סוגי מכשולים לבנייה אוטומטית",
+    "confirmSettings": "אישור",
+    "selectAtLeastOneType": "יש לבחור לפחות סוג מכשול אחד.",
+    "autoBuildFailed": "לא הצלחתי לבנות מסלול תקין. נסה כמות מכשולים נמוכה יותר או מידה גדולה יותר.",
+    "buildWithSettings": "בנה לפי ההגדרות",
+    "feiHint": "ברירת מחדל תואמת FEI באופן פרקטי (טווח מכשולים ומרווחים), וניתנת לעריכה ידנית מלאה.",
+    "enterFullscreen": "מסך מלא",
+    "exitFullscreen": "צא ממסך מלא",
+    "clear": "נקה מפה",
+    "confirmClear": "למחוק את כל המכשולים מהמפה?",
+    "edit": "עריכת מכשול",
+    "number": "מספר מכשול",
+    "color": "צבע",
+    "isDouble": "מכשול כפול (שתי ראליות / קומבינציה)",
+    "remove": "הסר מהמפה",
+    "dragHandle": "גרור להזזה",
+    "doubleAbbr": "×2",
+    "startSensor": "START",
+    "finishSensor": "FINISH",
+    "gateEdit": "חיישנים",
+    "startSensorHint": "גרור את חיישן הזינוק (START) למיקום הרצוי על המפה.",
+    "finishSensorHint": "גרור את חיישן הסיום (FINISH) למיקום הרצוי על המפה.",
+    "obstacles": {
+      "vertical": "מאונך",
+      "oxer": "אוקסר",
+      "triple": "טריפל",
+      "wall": "חומה",
+      "water": "מים",
+      "liverpool": "ליברפול",
+      "combination": "קומבינציה / כפול"
+    }
   },
   "common": {
     "create": "צור", "save": "שמור", "cancel": "בטל", "delete": "מחק", "edit": "ערוך",
@@ -69,6 +119,11 @@
     "allowedTime": "זמן מותר (שניות)",
     "timeLimit": "זמן מקסימלי (שניות)",
     "timeLimitAuto": "אוטומטי = מותר × מכפיל",
+    "competitionType": "סוג תחרות",
+    "competitionTypes": {
+      "STANDARD": "רגיל",
+      "ACCUMULATOR": "צובר נקודות (FEI סעיף 229)"
+    },
     "tableType": "טבלה",
     "tableTypes": { "A": "טבלה A", "C": "טבלה C" },
     "rankingMode": "שיטת דירוג",
@@ -89,6 +144,29 @@
     "refusal": "סירוב",
     "scoringTypes": { "FAULTS_TIME": "עונשין ואז זמן", "TIME_ONLY": "זמן בלבד", "JUMP_OFF": "סיבוב הכרעה" },
     "scoringRules": "כללי חישוב",
+    "accumulator": {
+      "numberOfObstacles": "מספר מכשולים",
+      "maxPoints": "מקסימום נקודות",
+      "mode": "מצב צובר",
+      "hasJoker": "Joker במכשול האחרון",
+      "jokerType": "סוג Joker",
+      "jokerPositionHint": "מיקום Joker הוא במכשול האחרון בלבד",
+      "modes": {
+        "AGAINST_CLOCK_NO_JUMP_OFF": "מול שעון ללא סיבוב הכרעה",
+        "AGAINST_CLOCK_WITH_JUMP_OFF": "מול שעון עם סיבוב הכרעה",
+        "NOT_AGAINST_CLOCK_WITH_JUMP_OFF": "לא מול שעון עם סיבוב הכרעה"
+      },
+      "jokerTypes": {
+        "NONE": "ללא",
+        "SINGLE_JOKER": "Joker יחיד (200%)",
+        "DOUBLE_JOKER": "Joker כפול (150% / 200%)"
+      },
+      "errors": {
+        "invalidObstacleCount": "מספר המכשולים חייב להיות 6, 8 או 10",
+        "jokerRequiresEnabled": "סוג Joker זמין רק כאשר Joker מופעל",
+        "jokerTypeRequired": "יש לבחור סוג Joker כאשר Joker מופעל"
+      }
+    },
     "rules": {
       "knockdownFaults": "עונשין על הפלת מוט",
       "firstRefusalFaults": "עונשין על סירוב ראשון",
@@ -144,6 +222,18 @@
     "displayScreen": "מסך תצוגה", "classEntries": "משתתפי המקצה", "doubleClickToJudge": "לחיצה כפולה על רוכב/סוס תטעין לשיפוט", "activeNow": "כרגע במסלול",
     "manualModeOn": "מצב ידני: פעיל",
     "manualModeOff": "מצב ידני: כבוי",
+    "accumulator": {
+      "obstacles": "מכשולי Accumulator",
+      "clear": "נקי",
+      "knockdown": "הפלה",
+      "normal": "רגיל",
+      "joker": "Joker",
+      "joker1": "Joker 1",
+      "joker2": "Joker 2",
+      "points": "נקודות",
+      "penalties": "עונשין",
+      "finalScore": "ציון סופי"
+    },
     "readiness": {
       "title": "המקצה לא מוכן",
       "subtitle": "תקן את הסעיפים הבאים לפני ההתחלה",

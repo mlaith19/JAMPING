@@ -37,6 +37,23 @@ enum RunStatus {
   ELIMINATED
 }
 
+enum ClassCompetitionType {
+  STANDARD
+  ACCUMULATOR
+}
+
+enum AccumulatorMode {
+  AGAINST_CLOCK_NO_JUMP_OFF
+  AGAINST_CLOCK_WITH_JUMP_OFF
+  NOT_AGAINST_CLOCK_WITH_JUMP_OFF
+}
+
+enum JokerType {
+  NONE
+  SINGLE_JOKER
+  DOUBLE_JOKER
+}
+
 enum DeviceType {
   START
   FINISH
@@ -105,6 +122,12 @@ model ShowClass {
   jumpOffTimeFaultIntervalSeconds  Int   @default(1)
   jumpOffTimeFaultPoints           Int   @default(1)
   timeLimitMultiplier              Float @default(2.0)
+  competitionType        ClassCompetitionType @default(STANDARD)
+  numberOfObstacles      Int                  @default(10)
+  accumulatorMode        AccumulatorMode      @default(AGAINST_CLOCK_NO_JUMP_OFF)
+  hasJoker               Boolean              @default(false)
+  jokerType              JokerType            @default(NONE)
+  maxPoints              Int                  @default(55)
 
   eliminationRules       Json?
   startListLocked        Boolean      @default(false)

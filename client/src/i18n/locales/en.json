@@ -16,7 +16,57 @@
     "overview": "Overview",
     "classes": "Classes",
     "settings": "Settings",
-    "rules": "Rules"
+    "rules": "Rules",
+    "courseMap": "Course map"
+  },
+  "courseMap": {
+    "title": "Course map",
+    "palette": "Obstacles",
+    "paletteHint": "Drag an obstacle type onto the map. Drag a placed obstacle back here to remove it. Click a placed fence to edit number, color, rotation, or combination.",
+    "dropToDelete": "Release here to remove from the map",
+    "rotation": "Rotation",
+    "rotationPresetsHint": "Pick a fixed angle (every 45°). The fence rotates in place around its center.",
+    "dragToMap": "Drag to map",
+    "dropHint": "Drag an obstacle from the palette to build your course",
+    "view3dHint": "3D view: drag to orbit the camera, scroll to zoom. Move fences with the gray cube near each jump; same for START/FINISH beams.",
+    "arenaSettings": "Arena settings",
+    "autoBuild": "Auto build",
+    "arenaWidth": "Arena width (m)",
+    "arenaLength": "Arena length (m)",
+    "obstacleCount": "Obstacle count",
+    "obstacleHeight": "Obstacle height (m)",
+    "heightLimitHint": "FEI limit: obstacle standards/poles must not exceed 1.75 m.",
+    "allowedTypes": "Obstacle types for auto build",
+    "confirmSettings": "Confirm",
+    "selectAtLeastOneType": "Please select at least one obstacle type.",
+    "autoBuildFailed": "Could not generate a valid course. Try fewer obstacles or a larger arena.",
+    "buildWithSettings": "Build with settings",
+    "feiHint": "Default generation follows practical FEI-style ranges (count and spacing), and remains fully editable.",
+    "enterFullscreen": "Fullscreen",
+    "exitFullscreen": "Exit fullscreen",
+    "clear": "Clear map",
+    "confirmClear": "Remove all obstacles from the map?",
+    "edit": "Edit obstacle",
+    "number": "Obstacle number",
+    "color": "Color",
+    "isDouble": "Combination / double (two elements)",
+    "remove": "Remove from map",
+    "dragHandle": "Drag to move",
+    "doubleAbbr": "×2",
+    "startSensor": "START",
+    "finishSensor": "FINISH",
+    "gateEdit": "Sensors",
+    "startSensorHint": "Drag the start beam / START sensor to the correct place on the map.",
+    "finishSensorHint": "Drag the finish beam / FINISH sensor to the correct place on the map.",
+    "obstacles": {
+      "vertical": "Vertical",
+      "oxer": "Oxer",
+      "triple": "Triple bar",
+      "wall": "Wall",
+      "water": "Water",
+      "liverpool": "Liverpool",
+      "combination": "Combination"
+    }
   },
   "common": {
     "create": "Create", "save": "Save", "cancel": "Cancel", "delete": "Delete", "edit": "Edit",
@@ -62,6 +112,11 @@
     "allowedTime": "Allowed time (s)",
     "timeLimit": "Time limit (s)",
     "timeLimitAuto": "Auto = allowed × multiplier",
+    "competitionType": "Competition type",
+    "competitionTypes": {
+      "STANDARD": "Standard",
+      "ACCUMULATOR": "Accumulator (FEI Art. 229)"
+    },
     "tableType": "Table type",
     "tableTypes": { "A": "Table A", "C": "Table C" },
     "rankingMode": "Ranking mode",
@@ -82,6 +137,29 @@
     "refusal": "Refusal",
     "scoringTypes": { "FAULTS_TIME": "Faults then time", "TIME_ONLY": "Time only", "JUMP_OFF": "Jump-off" },
     "scoringRules": "Scoring Rules",
+    "accumulator": {
+      "numberOfObstacles": "Number of obstacles",
+      "maxPoints": "Max points",
+      "mode": "Accumulator mode",
+      "hasJoker": "Enable Joker on last obstacle",
+      "jokerType": "Joker type",
+      "jokerPositionHint": "Joker position is last obstacle only",
+      "modes": {
+        "AGAINST_CLOCK_NO_JUMP_OFF": "Against Clock (No Jump-Off)",
+        "AGAINST_CLOCK_WITH_JUMP_OFF": "Against Clock (With Jump-Off)",
+        "NOT_AGAINST_CLOCK_WITH_JUMP_OFF": "Not Against Clock (With Jump-Off)"
+      },
+      "jokerTypes": {
+        "NONE": "None",
+        "SINGLE_JOKER": "Single Joker (200%)",
+        "DOUBLE_JOKER": "Double Joker (150% / 200%)"
+      },
+      "errors": {
+        "invalidObstacleCount": "Number of obstacles must be 6, 8, or 10",
+        "jokerRequiresEnabled": "Joker type requires joker enabled",
+        "jokerTypeRequired": "Select a joker type when joker is enabled"
+      }
+    },
     "rules": {
       "knockdownFaults": "Knockdown faults",
       "firstRefusalFaults": "First refusal faults",
@@ -135,6 +213,18 @@
     "displayScreen": "Display Screen", "classEntries": "Class Entries", "doubleClickToJudge": "Double-click rider/horse to load for judging", "activeNow": "Active Now",
     "manualModeOn": "Manual mode: ON",
     "manualModeOff": "Manual mode: OFF",
+    "accumulator": {
+      "obstacles": "Accumulator Obstacles",
+      "clear": "Clear",
+      "knockdown": "Knockdown",
+      "normal": "Normal",
+      "joker": "Joker",
+      "joker1": "Joker 1",
+      "joker2": "Joker 2",
+      "points": "Points",
+      "penalties": "Penalties",
+      "finalScore": "Final Score"
+    },
     "readiness": {
       "title": "Class Not Ready",
       "subtitle": "Fix the following before starting",
