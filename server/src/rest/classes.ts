@@ -34,7 +34,8 @@ const ClassInput = z.object({
   jumpOffTimeFaultIntervalSeconds: z.number().int().min(1).max(60).optional(),
   jumpOffTimeFaultPoints: z.number().int().min(0).max(20).optional(),
   timeLimitMultiplier: z.number().min(1).max(10).optional(),
-  competitionType: z.enum(["STANDARD", "ACCUMULATOR"]).optional(),
+  competitionType: z.enum(["STANDARD", "ACCUMULATOR", "TIME_60_80"]).optional(),
+  targetTimeSeconds: z.number().int().min(1).max(3600).nullable().optional(),
   numberOfObstacles: z.union([z.literal(6), z.literal(8), z.literal(10)]).optional(),
   accumulatorMode: z
     .enum(["AGAINST_CLOCK_NO_JUMP_OFF", "AGAINST_CLOCK_WITH_JUMP_OFF", "NOT_AGAINST_CLOCK_WITH_JUMP_OFF"])
@@ -56,12 +57,13 @@ async function mergeExtraClassFields<T extends { id: string }>(items: T[]): Prom
   maxObstacles: number;
   tableCDisobedienceWithKnockdownSeconds: number;
   applyTimeAdditionToClock: boolean;
-  competitionType: "STANDARD" | "ACCUMULATOR";
+  competitionType: "STANDARD" | "ACCUMULATOR" | "TIME_60_80";
   numberOfObstacles: 6 | 8 | 10;
   accumulatorMode: "AGAINST_CLOCK_NO_JUMP_OFF" | "AGAINST_CLOCK_WITH_JUMP_OFF" | "NOT_AGAINST_CLOCK_WITH_JUMP_OFF";
   hasJoker: boolean;
   jokerType: "NONE" | "SINGLE_JOKER" | "DOUBLE_JOKER";
   maxPoints: number;
+  targetTimeSeconds: number | null;
 }>> {
   if (items.length === 0) return [] as Array<T & {
     courseLengthMeters: number | null;
@@ -69,12 +71,13 @@ async function mergeExtraClassFields<T extends { id: string }>(items: T[]): Prom
     maxObstacles: number;
     tableCDisobedienceWithKnockdownSeconds: number;
     applyTimeAdditionToClock: boolean;
-    competitionType: "STANDARD" | "ACCUMULATOR";
+    competitionType: "STANDARD" | "ACCUMULATOR" | "TIME_60_80";
     numberOfObstacles: 6 | 8 | 10;
     accumulatorMode: "AGAINST_CLOCK_NO_JUMP_OFF" | "AGAINST_CLOCK_WITH_JUMP_OFF" | "NOT_AGAINST_CLOCK_WITH_JUMP_OFF";
     hasJoker: boolean;
     jokerType: "NONE" | "SINGLE_JOKER" | "DOUBLE_JOKER";
     maxPoints: number;
+    targetTimeSeconds: number | null;
   }>;
   try {
     const byId = new Map<
@@ -85,7 +88,7 @@ async function mergeExtraClassFields<T extends { id: string }>(items: T[]): Prom
         maxObstacles: number | null;
         tableCDisobedienceWithKnockdownSeconds: number | null;
         applyTimeAdditionToClock: boolean | null;
-        competitionType: "STANDARD" | "ACCUMULATOR" | null;
+        competitionType: "STANDARD" | "ACCUMULATOR" | "TIME_60_80" | null;
         numberOfObstacles: number | null;
         accumulatorMode:
           | "AGAINST_CLOCK_NO_JUMP_OFF"
@@ -95,6 +98,7 @@ async function mergeExtraClassFields<T extends { id: string }>(items: T[]): Prom
         hasJoker: boolean | null;
         jokerType: "NONE" | "SINGLE_JOKER" | "DOUBLE_JOKER" | null;
         maxPoints: number | null;
+        targetTimeSeconds: number | null;
       }
     >();
     for (const item of items) {
@@ -105,7 +109,7 @@ async function mergeExtraClassFields<T extends { id: string }>(items: T[]): Prom
           maxObstacles: number | null;
           tableCDisobedienceWithKnockdownSeconds: number | null;
           applyTimeAdditionToClock: boolean | null;
-          competitionType: "STANDARD" | "ACCUMULATOR" | null;
+          competitionType: "STANDARD" | "ACCUMULATOR" | "TIME_60_80" | null;
           numberOfObstacles: number | null;
           accumulatorMode:
             | "AGAINST_CLOCK_NO_JUMP_OFF"
@@ -115,8 +119,9 @@ async function mergeExtraClassFields<T extends { id: string }>(items: T[]): Prom
           hasJoker: boolean | null;
           jokerType: "NONE" | "SINGLE_JOKER" | "DOUBLE_JOKER" | null;
           maxPoints: number | null;
+          targetTimeSeconds: number | null;
         }>
-      >`SELECT "courseLengthMeters","horseSpeedMetersPerMinute","maxObstacles","tableCDisobedienceWithKnockdownSeconds","applyTimeAdditionToClock","competitionType","numberOfObstacles","accumulatorMode","hasJoker","jokerType","maxPoints" FROM "ShowClass" WHERE "id" = ${item.id} LIMIT 1`;
+      >`SELECT "courseLengthMeters","horseSpeedMetersPerMinute","maxObstacles","tableCDisobedienceWithKnockdownSeconds","applyTimeAdditionToClock","competitionType","numberOfObstacles","accumulatorMode","hasJoker","jokerType","maxPoints","targetTimeSeconds" FROM "ShowClass" WHERE "id" = ${item.id} LIMIT 1`;
       if (rows[0]) byId.set(item.id, rows[0]);
     }
     return items.map((item) => {
@@ -137,6 +142,7 @@ async function mergeExtraClassFields<T extends { id: string }>(items: T[]): Prom
         hasJoker: x?.hasJoker ?? false,
         jokerType: x?.jokerType ?? "NONE",
         maxPoints: x?.maxPoints ?? 55,
+        targetTimeSeconds: x?.targetTimeSeconds ?? null,
       };
     });
   } catch {
@@ -153,6 +159,7 @@ async function mergeExtraClassFields<T extends { id: string }>(items: T[]): Prom
       hasJoker: false,
       jokerType: "NONE",
       maxPoints: 55,
+      targetTimeSeconds: null,
     }));
   }
 }
@@ -171,6 +178,7 @@ function hasAccumulatorFields(data: Partial<z.infer<typeof ClassInput>>): boolea
     data.hasJoker !== undefined ||
     data.jokerType !== undefined ||
     data.maxPoints !== undefined
+    || data.targetTimeSeconds !== undefined
   );
 }
 
@@ -253,6 +261,13 @@ async function patchExtraClassFields(classId: string, data: Partial<z.infer<type
         classId
       );
     }
+    if (data.targetTimeSeconds !== undefined) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "ShowClass" SET "targetTimeSeconds" = $1 WHERE "id" = $2`,
+        data.targetTimeSeconds,
+        classId
+      );
+    }
     return true;
   } catch {
     // Keep backward compatibility when DB/schema is not yet migrated.
@@ -309,6 +324,7 @@ classesRouter.post("/", async (req, res) => {
     hasJoker,
     jokerType,
     maxPoints,
+    targetTimeSeconds,
     ...rest
   } = normalized;
   const item = await prisma.showClass.create({ data: rest });
@@ -325,11 +341,12 @@ classesRouter.post("/", async (req, res) => {
     hasJoker,
     jokerType,
     maxPoints,
+    targetTimeSeconds,
   });
+  // Backward compatibility: do not block class creation if optional extended fields
+  // are unavailable in current DB schema. Base class is already created above.
   if (!extraPatchOk && hasAccumulatorFields(normalized)) {
-    return res.status(409).json({
-      error: "Accumulator fields are not available in database yet. Please run Prisma migration and generate.",
-    });
+    // no-op: keep success response with merged defaults
   }
   const [merged] = await mergeExtraClassFields([item]);
   res.status(201).json(merged);
@@ -366,6 +383,7 @@ classesRouter.patch("/:id", async (req, res) => {
     hasJoker,
     jokerType,
     maxPoints,
+    targetTimeSeconds,
     ...rest
   } = normalized;
   const item = await prisma.showClass.update({ where: { id: req.params.id }, data: rest });
@@ -382,11 +400,12 @@ classesRouter.patch("/:id", async (req, res) => {
     hasJoker,
     jokerType,
     maxPoints,
+    targetTimeSeconds,
   });
+  // Backward compatibility: do not fail with 409 when optional extended fields
+  // cannot be patched in older schemas. Core update already succeeded.
   if (!extraPatchOk && hasAccumulatorFields(normalized)) {
-    return res.status(409).json({
-      error: "Accumulator fields are not available in database yet. Please run Prisma migration and generate.",
-    });
+    // no-op: keep success response with merged defaults
   }
   const [merged] = await mergeExtraClassFields([item]);
   res.json(merged);

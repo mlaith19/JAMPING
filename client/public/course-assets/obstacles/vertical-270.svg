@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" width="400" height="320">
+  <defs>
+    <linearGradient id="postFront" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#5b6878"/>
+      <stop offset="50%" stop-color="#edf2f7"/>
+      <stop offset="100%" stop-color="#3f4c5b"/>
+    </linearGradient>
+    <linearGradient id="postRight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1f2937"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <linearGradient id="postTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#94a3b8"/>
+    </linearGradient>
+
+    <linearGradient id="railTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff7ed"/>
+      <stop offset="45%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <linearGradient id="railFront" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fdba74"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </linearGradient>
+    <linearGradient id="accentStripe" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+
+    <linearGradient id="wingFace" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e5e7eb"/>
+    </linearGradient>
+    <linearGradient id="baseFoot" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4b5563"/>
+      <stop offset="100%" stop-color="#1f2937"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.22)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </radialGradient>
+
+    <filter id="softShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#0b1220" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <g transform="translate(200,254)">
+    <!-- ground shadow / ambient occlusion -->
+    <ellipse cx="10" cy="22" rx="88" ry="18" fill="rgba(0,0,0,0.22)"/>
+    <ellipse cx="8" cy="18" rx="64" ry="12" fill="rgba(0,0,0,0.15)"/>
+
+    <!-- left standard -->
+    <g transform="translate(-99,0)" filter="url(#softShadow)">
+      <path d="M-6-126 L6-126 L12-121 L0-121 Z" fill="url(#postTop)"/>
+      <path d="M6-126 L12-121 L12 12 L6 7 Z" fill="url(#postRight)"/>
+      <path d="M-6-126 L6-126 L6 7 L-6 12 Z" fill="url(#postFront)" stroke="#334155" stroke-width="1"/>
+      <path d="M-8 12 L8 12 L12 18 L-12 18 Z" fill="url(#baseFoot)"/>
+      <rect x="-2.5" y="-109" width="3" height="104" rx="1.2" fill="rgba(255,255,255,0.25)"/>
+    </g>
+
+    <!-- right standard -->
+    <g transform="translate(99,0)" filter="url(#softShadow)">
+      <path d="M-6-126 L6-126 L12-121 L0-121 Z" fill="url(#postTop)"/>
+      <path d="M6-126 L12-121 L12 12 L6 7 Z" fill="url(#postRight)"/>
+      <path d="M-6-126 L6-126 L6 7 L-6 12 Z" fill="url(#postFront)" stroke="#334155" stroke-width="1"/>
+      <path d="M-8 12 L8 12 L12 18 L-12 18 Z" fill="url(#baseFoot)"/>
+      <rect x="-2.5" y="-109" width="3" height="104" rx="1.2" fill="rgba(255,255,255,0.25)"/>
+    </g>
+
+    <!-- wings with decorative fillers -->
+    <g filter="url(#softShadow)">
+      <path d="M-67-74 L-102-99 L-102-48 L-67-58 Z" fill="url(#wingFace)" stroke="#b91c1c" stroke-width="1.2"/>
+      <path d="M-75-88 L-94-95" stroke="#b91c1c" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M-76-76 L-96-84" stroke="#b91c1c" stroke-width="1.4" stroke-linecap="round" opacity="0.75"/>
+      <circle cx="-90" cy="-72" r="2.4" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.5"/>
+
+      <path d="M67-74 L102-99 L102-48 L67-58 Z" fill="url(#wingFace)" stroke="#b91c1c" stroke-width="1.2"/>
+      <path d="M75-88 L94-95" stroke="#b91c1c" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M76-76 L96-84" stroke="#b91c1c" stroke-width="1.4" stroke-linecap="round" opacity="0.75"/>
+      <circle cx="90" cy="-72" r="2.4" fill="#e5e7eb" stroke="#9ca3af" stroke-width="0.5"/>
+    </g>
+
+    <!-- FEI style flags -->
+    <g>
+      <path d="M-31-108 L-31-89" stroke="#44403c" stroke-width="1.2"/>
+      <path d="M-31-108 L-18-103 L-31-98 Z" fill="#dc2626" stroke="rgba(0,0,0,0.2)" stroke-width="0.4"/>
+
+      <path d="M31-108 L31-89" stroke="#44403c" stroke-width="1.2"/>
+      <path d="M31-108 L44-103 L31-98 Z" fill="#fafaf9" stroke="rgba(0,0,0,0.2)" stroke-width="0.4"/>
+    </g>
+
+    <!-- cups -->
+    <path d="M-103-79 L-95-79 L-94-72 L-104-72 Z" fill="#1f2937"/>
+    <path d="M95-79 L103-79 L104-72 L94-72 Z" fill="#1f2937"/>
+
+    <!-- main rail (layered with depth) -->
+    <g filter="url(#softShadow)">
+      <path d="M-61-74 L61-74 L68-69 L-54-69 Z" fill="url(#railTop)" stroke="#b45309" stroke-width="1"/>
+      <path d="M-54-69 L68-69 L68-55 L-54-55 Z" fill="url(#railFront)" stroke="#7c2d12" stroke-width="0.9"/>
+      <path d="M-61-74 L-54-69 L-54-55 L-61-60 Z" fill="#fb923c" opacity="0.52"/>
+      <path d="M-55-74 L55-74" stroke="rgba(255,255,255,0.55)" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M-40-72 L40-72 L44-69 L-36-69 Z" fill="url(#accentStripe)" opacity="0.9"/>
+    </g>
+
+    <!-- number plate area highlight -->
+    <ellipse cx="0" cy="-97" rx="26" ry="12" fill="url(#halo)"/>
+  </g>
+</svg>

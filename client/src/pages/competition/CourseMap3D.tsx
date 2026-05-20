@@ -19,7 +19,7 @@ export type CourseMapObstacle = {
 type ObstacleTemplate = {
   id: string;
   defaultColor: string;
-  shape: "vertical" | "oxer" | "triple" | "wall" | "water" | "liverpool" | "combination";
+  shape: "vertical" | "oxer" | "triple" | "wall" | "water" | "liverpool" | "combination" | "gate" | "plank";
 };
 
 export type RaycastGroundFn = (clientX: number, clientY: number) => Vector3 | null;
@@ -233,6 +233,46 @@ function ObstacleMesh3D({
               emissiveIntensity={selected ? 0.2 : 0}
             />
           </mesh>
+        );
+      case "gate":
+        return (
+          <>
+            <StandardFrame x={-0.56} />
+            <StandardFrame x={0.56} />
+            <mesh position={[0, 0.92, 0]} castShadow receiveShadow>
+              <boxGeometry args={[1.35, 0.58, 0.12]} />
+              <meshStandardMaterial
+                color={c}
+                metalness={0.2}
+                roughness={0.45}
+                emissive={selected ? c : "#000000"}
+                emissiveIntensity={selected ? 0.15 : 0}
+              />
+            </mesh>
+            <FlagPair />
+          </>
+        );
+      case "plank":
+        return (
+          <>
+            <StandardFrame x={-0.56} />
+            <StandardFrame x={0.56} />
+            <mesh position={[0, 1.08, 0]} castShadow receiveShadow>
+              <boxGeometry args={[1.35, 0.18, 0.08]} />
+              <meshStandardMaterial
+                color={c}
+                metalness={0.22}
+                roughness={0.42}
+                emissive={selected ? c : "#000000"}
+                emissiveIntensity={selected ? 0.18 : 0}
+              />
+            </mesh>
+            <mesh position={[0, 0.9, 0]} castShadow receiveShadow>
+              <boxGeometry args={[1.35, 0.12, 0.08]} />
+              <meshStandardMaterial color="#f8fafc" metalness={0.18} roughness={0.44} />
+            </mesh>
+            <FlagPair />
+          </>
         );
       case "water":
         return (

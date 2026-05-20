@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 320" width="480" height="320">
+  <defs>
+    <linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fffbeb"/><stop offset="100%" stop-color="#ea580c"/></linearGradient>
+    <linearGradient id="p" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#64748b"/><stop offset="50%" stop-color="#f1f5f9"/><stop offset="100%" stop-color="#475569"/></linearGradient>
+  </defs>
+  <g transform="translate(120,258)">
+    <ellipse cx="0" cy="18" rx="48" ry="12" fill="rgba(0,0,0,0.2)"/>
+    <g transform="translate(-32,0)"><path d="M-4-95 L4-95 L7-92 L7 8 L-4 8 Z" fill="url(#p)"/><path d="M4-95 L7-92 L7 8 L4 5 Z" fill="#334155"/></g>
+    <g transform="translate(32,0)"><path d="M-4-95 L4-95 L7-92 L7 8 L-4 8 Z" fill="url(#p)"/><path d="M4-95 L7-92 L7 8 L4 5 Z" fill="#334155"/></g>
+    <path d="M-28-58 L28-58 L31-55 L31-48 L-28-48 Z" fill="url(#w)" stroke="#9a3412"/>
+    <path d="M-28-48 L31-48 L31-40 L-28-40 Z" fill="#c2410c"/>
+    <text x="0" y="28" text-anchor="middle" fill="#292524" font-size="11" font-weight="800" font-family="Georgia,serif">A</text>
+  </g>
+  <g transform="translate(360,258)">
+    <ellipse cx="0" cy="18" rx="48" ry="12" fill="rgba(0,0,0,0.2)"/>
+    <g transform="translate(-32,0)"><path d="M-4-95 L4-95 L7-92 L7 8 L-4 8 Z" fill="url(#p)"/><path d="M4-95 L7-92 L7 8 L4 5 Z" fill="#334155"/></g>
+    <g transform="translate(32,0)"><path d="M-4-95 L4-95 L7-92 L7 8 L-4 8 Z" fill="url(#p)"/><path d="M4-95 L7-92 L7 8 L4 5 Z" fill="#334155"/></g>
+    <path d="M-28-58 L28-58 L31-55 L31-48 L-28-48 Z" fill="url(#w)" stroke="#9a3412"/>
+    <path d="M-28-48 L31-48 L31-40 L-28-40 Z" fill="#c2410c"/>
+    <text x="0" y="28" text-anchor="middle" fill="#292524" font-size="11" font-weight="800" font-family="Georgia,serif">B</text>
+  </g>
+</svg>

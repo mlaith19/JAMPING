@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Users, Trash2, Edit3, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import type { Rider } from "../lib/types";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -9,6 +10,8 @@ import { Modal } from "../components/ui/Modal";
 
 interface RiderForm {
   name: string;
+  photo?: string | null;
+  birthDate?: string | null;
   phone?: string | null;
   country?: string | null;
   club?: string | null;
@@ -19,6 +22,7 @@ const empty: RiderForm = { name: "" };
 
 export function Riders() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Rider | null>(null);
@@ -57,6 +61,8 @@ export function Riders() {
     setEditing(r);
     setForm({
       name: r.name,
+      photo: r.photo ?? "",
+      birthDate: r.birthDate ? new Date(r.birthDate).toISOString().slice(0, 10) : "",
       phone: r.phone ?? "",
       country: r.country ?? "",
       club: r.club ?? "",
@@ -72,9 +78,14 @@ export function Riders() {
         subtitle={t("riders.subtitle")}
         icon={<Users className="w-5 h-5" />}
         actions={
-          <button onClick={startNew} className="btn-primary">
-            <Plus className="w-4 h-4" /> {t("riders.new")}
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => navigate("/registration")} className="btn-ghost">
+              {t("riders.registrationButton", "רישום רוכב + סוס")}
+            </button>
+            <button onClick={startNew} className="btn-primary">
+              <Plus className="w-4 h-4" /> {t("riders.new")}
+            </button>
+          </div>
         }
       />
 
@@ -104,7 +115,16 @@ export function Riders() {
             {data.map((r) => (
               <tr key={r.id}>
                 <td className="font-mono font-bold text-neon-cyan">#{r.internalNumber}</td>
-                <td className="font-semibold text-white">{r.name}</td>
+                <td className="font-semibold text-white">
+                  <div className="flex items-center gap-2">
+                    {r.photo ? (
+                      <img src={r.photo} alt={r.name} className="h-8 w-8 rounded-full object-cover border border-white/20" />
+                    ) : (
+                      <div className="h-8 w-8 rounded-full border border-white/15 bg-white/5" />
+                    )}
+                    <span>{r.name}</span>
+                  </div>
+                </td>
                 <td className="text-white/65">{r.phone ?? "-"}</td>
                 <td className="text-white/65">{r.country ?? "-"}</td>
                 <td className="text-white/65">{r.club ?? "-"}</td>
@@ -157,7 +177,46 @@ export function Riders() {
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
           </div>
+          <div>
+            <label className="label">{t("riders.photo", "תמונת רוכב")}</label>
+            <div className="mt-1 flex items-center gap-3">
+              {form.photo ? (
+                <img src={form.photo} alt={form.name || "Rider"} className="h-14 w-14 rounded-xl object-cover border border-white/20" />
+              ) : (
+                <div className="h-14 w-14 rounded-xl border border-white/15 bg-white/5" />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="input"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const value = typeof reader.result === "string" ? reader.result : "";
+                    setForm((prev) => ({ ...prev, photo: value }));
+                  };
+                  reader.readAsDataURL(file);
+                }}
+              />
+              {form.photo && (
+                <button type="button" className="btn-ghost" onClick={() => setForm((prev) => ({ ...prev, photo: "" }))}>
+                  {t("common.reset", "איפוס")}
+                </button>
+              )}
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">{t("riders.birthDate", "תאריך לידה")}</label>
+              <input
+                type="date"
+                className="input mt-1"
+                value={form.birthDate ?? ""}
+                onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+              />
+            </div>
             <div>
               <label className="label">{t("riders.phone")}</label>
               <input

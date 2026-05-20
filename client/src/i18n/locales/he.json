@@ -22,10 +22,15 @@
   "courseMap": {
     "title": "מפת מסלול",
     "palette": "מכשולים",
-    "paletteHint": "גרור סוג מכשול אל תוך המפה. גרור מכשול מהמפה חזרה לסרגל כדי למחוק. לחץ על מכשול לעריכת מספר, צבע, סיבוב ומכשול כפול.",
+    "paletteHint": "גרור מכשול לתוכנית. גרור מכשול מהמפה חזרה לסרגל כדי למחוק. לחץ על מכשול לעריכת מספר, צבע ומכשול כפול.",
+    "modeEdit": "עריכה",
+    "modePresentation": "הצגה",
+    "editPlanHint": "מבט תוכנית פשוט: הזז מכשולים עם הריבוע האפור; גרור START/FINISH. גרור מהסרגל כדי להוסיף.",
+    "presentationFooter": "FEI · תרשים מסלול",
     "dropToDelete": "שחרר כאן — המכשול יוסר מהמפה",
     "rotation": "סיבוב",
-    "rotationPresetsHint": "בחר זווית קבועה (כל 45°) — המכשול מסתובב במקום סביב מרכזו.",
+    "rotationPresetsHint": "שמונה זוויות קבועות (כל 45°). במפת פרימיום נטען איור נפרד לכל זווית — בלי סיבוב חופשי של ה־SVG.",
+    "rotationTerrainLocked": "מים וליברפול נשארים אופקיים למישור הזירה (רק 0°).",
     "dragToMap": "גרור למפה",
     "dropHint": "גרור מכשול מהסרגל כדי לבנות את הזירה",
     "view3dHint": "תצוגה תלת־ממדית: גרור בעכבר (או אצבע) לסיבוב המצלמה, גלגלת לזום. הזז מכשולים עם הקובייה האפורה ליד המכשול; כך גם START/FINISH.",
@@ -73,7 +78,9 @@
     "search": "חיפוש", "loading": "טוען...", "name": "שם", "date": "תאריך", "location": "מקום",
     "status": "סטטוס", "type": "סוג", "actions": "פעולות", "notes": "הערות", "language": "שפה",
     "currency": "מטבע", "yes": "כן", "no": "לא", "back": "חזרה", "all": "הכל", "none": "ללא",
-    "select": "בחר...", "confirmDelete": "למחוק את הפריט הזה?"
+    "select": "בחר...", "confirmDelete": "למחוק את הפריט הזה?",
+    "regularMode": "מצב רגיל",
+    "darkMode": "מצב כהה"
   },
   "status": {
     "DRAFT": "טיוטה", "ACTIVE": "פעיל", "FINISHED": "הסתיים",
@@ -122,8 +129,11 @@
     "competitionType": "סוג תחרות",
     "competitionTypes": {
       "STANDARD": "רגיל",
-      "ACCUMULATOR": "צובר נקודות (FEI סעיף 229)"
+      "ACCUMULATOR": "צובר נקודות (FEI סעיף 229)",
+      "TIME_60_80": "60-80 (זמן יעד)"
     },
+    "targetTimeSeconds": "זמן יעד (שניות)",
+    "targetTimeHelp": "הדירוג נקבע לפי הקרבה המוחלטת לזמן היעד (מתחת או מעל). הקרוב ביותר מנצח.",
     "tableType": "טבלה",
     "tableTypes": { "A": "טבלה A", "C": "טבלה C" },
     "rankingMode": "שיטת דירוג",
@@ -186,7 +196,9 @@
   },
   "riders": {
     "title": "רוכבים", "subtitle": "מאגר רוכבים ראשי", "new": "הוסף רוכב",
-    "phone": "טלפון", "country": "מדינה", "club": "מועדון", "internalNumber": "מס׳"
+    "phone": "טלפון", "country": "מדינה", "club": "מועדון", "internalNumber": "מס׳", "photo": "תמונת רוכב",
+    "birthDate": "תאריך לידה", "registrationButton": "רישום רוכב + סוס",
+    "registrationTitle": "רישום רוכב + סוס", "registrationSubtitle": "טופס רישום משולב למאגרים"
   },
   "judges": {
     "subtitle": "מאגר שופטים מרכזי",
@@ -211,7 +223,7 @@
   "live": {
     "title": "תחרות חיה", "selectClass": "בחר מקצה כדי להתחיל",
     "startClass": "התחל מקצה", "endClass": "סיים מקצה", "nextRider": "רוכב הבא",
-    "armSensor": "הפעל חיישן זינוק", "manualStart": "זינוק ידני", "manualFinish": "סיום ידני",
+    "armSensor": "הפעל חיישן זינוק", "disarmSensor": "בטל חימוש חיישן", "manualStart": "זינוק ידני", "manualFinish": "סיום ידני",
     "reset": "איפוס", "approve": "אשר תוצאה", "current": "רוכב נוכחי",
     "noRider": "אין רוכב על המסלול",
     "knockdown": "הפלת מוט +4", "refusal": "סירוב +4", "elimination": "פסילה",
@@ -219,9 +231,33 @@
     "pause": "השהה",
     "pauseNotice": "השעון הושהה",
     "timeAddition": "תוספת זמן",
+    "legalTimeAddition": "תוספת זמן לפי החוק",
+    "additionsCount": "כמות הוספות",
+    "roundScreenShort": "מסלול",
+    "finishScreenShort": "סיום",
+    "leaderboardScreenShort": "דירוג",
     "displayScreen": "מסך תצוגה", "classEntries": "משתתפי המקצה", "doubleClickToJudge": "לחיצה כפולה על רוכב/סוס תטעין לשיפוט", "activeNow": "כרגע במסלול",
     "manualModeOn": "מצב ידני: פעיל",
     "manualModeOff": "מצב ידני: כבוי",
+    "editRun": "עריכה",
+    "editTime": "עריכת זמן",
+    "manualTimeSeconds": "זמן ידני (שניות)",
+    "manualFaults": "עונשין",
+    "editRefusals": "סירובים",
+    "editKnockdowns": "הפלות",
+    "timeUpdated": "הזמן עודכן",
+    "editUpdated": "הערכים עודכנו",
+    "invalidTimeInput": "זמן לא תקין",
+    "invalidEditInput": "ערכי עריכה לא תקינים",
+    "selectCurrentRiderFirst": "בחר רוכב נוכחי קודם",
+    "editPenalties": "עריכת עונשין",
+    "editPoints": "עריכת ניקוד",
+    "manualPenalties": "עונשין ידני",
+    "manualPoints": "ניקוד ידני",
+    "penaltiesUpdated": "העונשין עודכנו",
+    "pointsUpdated": "הניקוד עודכן",
+    "invalidPenaltyInput": "ערך עונשין לא תקין",
+    "invalidPointsInput": "ערך ניקוד לא תקין",
     "accumulator": {
       "obstacles": "מכשולי Accumulator",
       "clear": "נקי",
@@ -230,6 +266,10 @@
       "joker": "Joker",
       "joker1": "Joker 1",
       "joker2": "Joker 2",
+      "done": "בוצע",
+      "refusal": "הפיל",
+      "jokerUp": "+20",
+      "jokerDown": "-20",
       "points": "נקודות",
       "penalties": "עונשין",
       "finalScore": "ציון סופי"
@@ -250,7 +290,24 @@
   "display": {
     "leaderboard": "דירוג",
     "fullscreen": "מסך מלא",
-    "fullscreenExit": "יציאה ממסך מלא"
+    "fullscreenExit": "יציאה ממסך מלא",
+    "ridersCount": "רוכבים",
+    "completedCount": "סיימו",
+    "firstPlace": "מקום ראשון",
+    "secondPlace": "מקום שני",
+    "thirdPlace": "מקום שלישי",
+    "rank": "דירוג",
+    "finishResult": "תוצאת סיום",
+    "fault": "עונשין",
+    "clear": "נקי",
+    "clearRound": "סיבוב נקי",
+    "jumpOff": "סיבוב הכרעה",
+    "jumpOffQualified": "העפיל לסיבוב הכרעה",
+    "newLeader": "מוביל חדש",
+    "jokerUsed": "JOKER בוצע",
+    "jokerNotUsed": "JOKER לא בוצע",
+    "top5": "חמישייה ראשונה",
+    "totalPoints": "סה\"כ נקודות"
   },
   "results": {
     "title": "תוצאות", "place": "מקום", "faults": "עונשין", "time": "זמן",

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" width="400" height="320">
+  <defs>
+    <radialGradient id="pool" cx="38%" cy="35%" r="65%"><stop offset="0%" stop-color="#7dd3fc"/><stop offset="100%" stop-color="#0369a1"/></radialGradient>
+    <linearGradient id="st" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#64748b"/></linearGradient>
+    <linearGradient id="r" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fffbeb"/><stop offset="100%" stop-color="#d97706"/></linearGradient>
+  </defs>
+  <g transform="translate(200,268)">
+    <ellipse cx="4" cy="20" rx="92" ry="22" fill="rgba(0,0,0,0.2)"/>
+    <ellipse cx="0" cy="0" rx="88" ry="20" fill="none" stroke="#57534e" stroke-width="8"/>
+    <ellipse cx="0" cy="-2" rx="78" ry="16" fill="url(#pool)" stroke="rgba(125,211,252,0.5)" stroke-width="1.5"/>
+    <ellipse cx="-8" cy="-6" rx="40" ry="8" fill="rgba(255,255,255,0.15)"/>
+    <g transform="translate(-55,-115)"><path d="M-4-35 L4-35 L7-32 L7 12 L-4 12 Z" fill="url(#st)"/><path d="M4-35 L7-32 L7 12 L4 9 Z" fill="#334155"/></g>
+    <g transform="translate(55,-115)"><path d="M-4-35 L4-35 L7-32 L7 12 L-4 12 Z" fill="url(#st)"/><path d="M4-35 L7-32 L7 12 L4 9 Z" fill="#334155"/></g>
+    <path d="M-48-78 L48-78 L52-74 L52-66 L-48-66 Z" fill="url(#r)" stroke="#92400e"/>
+    <path d="M-48-66 L52-66 L52-58 L-48-58 Z" fill="#b45309"/>
+  </g>
+</svg>

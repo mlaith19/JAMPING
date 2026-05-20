@@ -40,6 +40,7 @@ enum RunStatus {
 enum ClassCompetitionType {
   STANDARD
   ACCUMULATOR
+  TIME_60_80
 }
 
 enum AccumulatorMode {
@@ -128,6 +129,7 @@ model ShowClass {
   hasJoker               Boolean              @default(false)
   jokerType              JokerType            @default(NONE)
   maxPoints              Int                  @default(55)
+  targetTimeSeconds      Int?
 
   eliminationRules       Json?
   startListLocked        Boolean      @default(false)
@@ -157,6 +159,8 @@ model Rider {
   id             String   @id @default(cuid())
   internalNumber Int      @unique @default(autoincrement())
   name           String
+  photo          String?
+  birthDate      DateTime?
   phone          String?
   country        String?
   club           String?

@@ -47,6 +47,7 @@ type RulesForm = {
   hasJoker: boolean;
   jokerType: JokerType;
   maxPoints: number;
+  targetTimeSeconds: number | null;
 };
 
 function sanitizePositiveInt(value: number | null | undefined, fallback: number): number {
@@ -83,12 +84,22 @@ function getAccumulatorMaxPoints(obstacles: 6 | 8 | 10): number {
 }
 
 function toForm(c: ShowClass): RulesForm {
+  const competitionType = c.competitionType ?? "STANDARD";
+  const defaultRefusalForAccumulator = competitionType === "ACCUMULATOR" ? 4 : 0;
+  const firstRefusalFaults =
+    competitionType === "ACCUMULATOR"
+      ? Math.max(1, sanitizePositiveInt(c.firstRefusalFaults, defaultRefusalForAccumulator || 4))
+      : c.firstRefusalFaults;
+  const secondRefusalFaults =
+    competitionType === "ACCUMULATOR"
+      ? Math.max(1, sanitizePositiveInt(c.secondRefusalFaults, firstRefusalFaults))
+      : c.secondRefusalFaults;
   const courseLengthMeters = c.courseLengthMeters ?? null;
   const horseSpeedMetersPerMinute = sanitizePositiveInt(c.horseSpeedMetersPerMinute, 350);
   const timeLimitMultiplier = sanitizeMultiplier(c.timeLimitMultiplier);
   const allowedTime = allowedTimeFromCourse(courseLengthMeters, horseSpeedMetersPerMinute) ?? c.allowedTime ?? null;
   return {
-    competitionType: c.competitionType ?? "STANDARD",
+    competitionType,
     tableType: c.tableType,
     courseLengthMeters,
     horseSpeedMetersPerMinute,
@@ -103,8 +114,8 @@ function toForm(c: ShowClass): RulesForm {
     hasJumpOff: c.hasJumpOff,
     jumpOffAgainstClock: c.jumpOffAgainstClock,
     knockdownFaults: c.knockdownFaults,
-    firstRefusalFaults: c.firstRefusalFaults,
-    secondRefusalFaults: c.secondRefusalFaults,
+    firstRefusalFaults,
+    secondRefusalFaults,
     maxRefusalsBeforeElimination: c.maxRefusalsBeforeElimination,
     timeFaultIntervalSeconds: c.timeFaultIntervalSeconds,
     timeFaultPoints: c.timeFaultPoints,
@@ -115,6 +126,7 @@ function toForm(c: ShowClass): RulesForm {
     hasJoker: c.hasJoker ?? false,
     jokerType: c.jokerType ?? "NONE",
     maxPoints: c.maxPoints ?? getAccumulatorMaxPoints(c.numberOfObstacles ?? 10),
+    targetTimeSeconds: c.targetTimeSeconds ?? c.allowedTime ?? 40,
   };
 }
 
@@ -213,17 +225,6 @@ export function CompetitionClassRules() {
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-3 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5">
             <div>
-              <label className="label">{t("classes.competitionType", "סוג תחרות")}</label>
-              <select
-                className="select mt-1 !h-9 !py-0 text-sm"
-                value={form.competitionType}
-                onChange={(e) => setForm({ ...form, competitionType: e.target.value as ClassCompetitionType })}
-              >
-                <option value="STANDARD">{t("classes.competitionTypes.STANDARD", "Standard")}</option>
-                <option value="ACCUMULATOR">{t("classes.competitionTypes.ACCUMULATOR", "Accumulator (FEI 229)")}</option>
-              </select>
-            </div>
-            <div>
               <label className="label">{t("classes.tableType")}</label>
               <select
                 className="select mt-1 !h-9 !py-0 text-sm"
@@ -232,6 +233,30 @@ export function CompetitionClassRules() {
               >
                 <option value="A">{t("classes.tableTypes.A")}</option>
                 <option value="C">{t("classes.tableTypes.C")}</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">{t("classes.competitionType", "סוג תחרות")}</label>
+              <select
+                className="select mt-1 !h-9 !py-0 text-sm"
+                value={form.competitionType}
+                onChange={(e) => {
+                  const nextType = e.target.value as ClassCompetitionType;
+                  if (nextType === "ACCUMULATOR") {
+                    setForm({
+                      ...form,
+                      competitionType: nextType,
+                      firstRefusalFaults: form.firstRefusalFaults > 0 ? form.firstRefusalFaults : 4,
+                      secondRefusalFaults: form.secondRefusalFaults > 0 ? form.secondRefusalFaults : 4,
+                    });
+                  } else {
+                    setForm({ ...form, competitionType: nextType });
+                  }
+                }}
+              >
+                <option value="STANDARD">{t("classes.competitionTypes.STANDARD", "Standard")}</option>
+                <option value="ACCUMULATOR">{t("classes.competitionTypes.ACCUMULATOR", "Accumulator (FEI 229)")}</option>
+                <option value="TIME_60_80">{t("classes.competitionTypes.TIME_60_80", "60-80 (Target Time)")}</option>
               </select>
             </div>
             <div>
@@ -261,80 +286,7 @@ export function CompetitionClassRules() {
             </div>
           </div>
 
-          {form.competitionType === "ACCUMULATOR" ? (
-            <div className="rounded-2xl border border-neon-cyan/30 bg-neon-cyan/[0.04] p-3 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5">
-              <div>
-                <label className="label">{t("classes.accumulator.numberOfObstacles", "מספר מכשולים")}</label>
-                <select
-                  className="select mt-1 !h-9 !py-0 text-sm"
-                  value={form.numberOfObstacles}
-                  onChange={(e) => setForm(recalc({ ...form, numberOfObstacles: Number(e.target.value) as 6 | 8 | 10 }))}
-                >
-                  <option value={6}>6</option>
-                  <option value={8}>8</option>
-                  <option value={10}>10</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">{t("classes.accumulator.maxPoints", "מקסימום נקודות")}</label>
-                <input type="number" className="input mt-1 !h-9 !py-0 text-sm" value={form.maxPoints} readOnly />
-              </div>
-              <div>
-                <label className="label">{t("classes.accumulator.mode", "מצב מצטבר")}</label>
-                <select
-                  className="select mt-1 !h-9 !py-0 text-sm"
-                  value={form.accumulatorMode}
-                  onChange={(e) => setForm({ ...form, accumulatorMode: e.target.value as AccumulatorMode })}
-                >
-                  <option value="AGAINST_CLOCK_NO_JUMP_OFF">
-                    {t("classes.accumulator.modes.AGAINST_CLOCK_NO_JUMP_OFF", "Against Clock (No Jump-Off)")}
-                  </option>
-                  <option value="AGAINST_CLOCK_WITH_JUMP_OFF">
-                    {t("classes.accumulator.modes.AGAINST_CLOCK_WITH_JUMP_OFF", "Against Clock (With Jump-Off)")}
-                  </option>
-                  <option value="NOT_AGAINST_CLOCK_WITH_JUMP_OFF">
-                    {t(
-                      "classes.accumulator.modes.NOT_AGAINST_CLOCK_WITH_JUMP_OFF",
-                      "Not Against Clock (With Jump-Off)"
-                    )}
-                  </option>
-                </select>
-              </div>
-              <div className="col-span-2">
-                <label className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/85 mt-5">
-                  <input
-                    type="checkbox"
-                    className="accent-neon-cyan"
-                    checked={form.hasJoker}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        hasJoker: e.target.checked,
-                        jokerType: e.target.checked ? (form.jokerType === "NONE" ? "SINGLE_JOKER" : form.jokerType) : "NONE",
-                      })
-                    }
-                  />
-                  {t("classes.accumulator.hasJoker", "כולל Joker במכשול האחרון")}
-                </label>
-              </div>
-              <div>
-                <label className="label">{t("classes.accumulator.jokerType", "סוג Joker")}</label>
-                <select
-                  className="select mt-1 !h-9 !py-0 text-sm"
-                  value={form.jokerType}
-                  disabled={!form.hasJoker}
-                  onChange={(e) => setForm({ ...form, jokerType: e.target.value as JokerType })}
-                >
-                  <option value="NONE">{t("classes.accumulator.jokerTypes.NONE", "None")}</option>
-                  <option value="SINGLE_JOKER">{t("classes.accumulator.jokerTypes.SINGLE_JOKER", "Single Joker (200%)")}</option>
-                  <option value="DOUBLE_JOKER">{t("classes.accumulator.jokerTypes.DOUBLE_JOKER", "Double Joker (150% / 200%)")}</option>
-                </select>
-                <div className="text-[11px] text-white/50 mt-1">
-                  {t("classes.accumulator.jokerPositionHint", "Joker ממוקם במכשול האחרון בלבד")}
-                </div>
-              </div>
-            </div>
-          ) : (
+          {form.tableType === "A" && (
             <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-3 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5">
             <div>
               <label className="label">{t("classes.courseLengthMeters", "אורך מסלול (מטר)")}</label>
@@ -432,7 +384,7 @@ export function CompetitionClassRules() {
           </div>
           )}
 
-          {form.competitionType !== "ACCUMULATOR" && (
+          {form.tableType === "A" && (
             <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-3 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5">
             <div>
               <label className="label">{t("classes.maxObstacles", "מקסימום מכשולים")}</label>
@@ -551,6 +503,127 @@ export function CompetitionClassRules() {
               />
             </div>
           </div>
+
+          {form.tableType === "A" && form.competitionType === "ACCUMULATOR" && (
+            <div className="rounded-2xl border border-neon-cyan/30 bg-neon-cyan/[0.04] p-3 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5">
+              <div>
+                <label className="label">{t("classes.accumulator.numberOfObstacles", "מספר מכשולים")}</label>
+                <select
+                  className="select mt-1 !h-9 !py-0 text-sm"
+                  value={form.numberOfObstacles}
+                  onChange={(e) => setForm(recalc({ ...form, numberOfObstacles: Number(e.target.value) as 6 | 8 | 10 }))}
+                >
+                  <option value={6}>6</option>
+                  <option value={8}>8</option>
+                  <option value={10}>10</option>
+                </select>
+              </div>
+              <div>
+                <label className="label">{t("classes.accumulator.maxPoints", "מקסימום נקודות")}</label>
+                <input type="number" className="input mt-1 !h-9 !py-0 text-sm" value={form.maxPoints} readOnly />
+              </div>
+              <div>
+                <label className="label">{t("classes.accumulator.refusalPoints", "נקודות לסירוב")}</label>
+                <input
+                  type="number"
+                  min={-50}
+                  max={-1}
+                  className="input mt-1 !h-9 !py-0 text-sm"
+                  value={-Math.max(1, form.firstRefusalFaults)}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    const deduction = Math.max(1, Math.min(50, Math.abs(Number.isFinite(n) ? n : -4)));
+                    setForm({
+                      ...form,
+                      firstRefusalFaults: deduction,
+                      secondRefusalFaults: deduction,
+                    });
+                  }}
+                />
+              </div>
+              <div>
+                <label className="label">{t("classes.accumulator.mode", "מצב מצטבר")}</label>
+                <select
+                  className="select mt-1 !h-9 !py-0 text-sm"
+                  value={form.accumulatorMode}
+                  onChange={(e) => setForm({ ...form, accumulatorMode: e.target.value as AccumulatorMode })}
+                >
+                  <option value="AGAINST_CLOCK_NO_JUMP_OFF">
+                    {t("classes.accumulator.modes.AGAINST_CLOCK_NO_JUMP_OFF", "Against Clock (No Jump-Off)")}
+                  </option>
+                  <option value="AGAINST_CLOCK_WITH_JUMP_OFF">
+                    {t("classes.accumulator.modes.AGAINST_CLOCK_WITH_JUMP_OFF", "Against Clock (With Jump-Off)")}
+                  </option>
+                  <option value="NOT_AGAINST_CLOCK_WITH_JUMP_OFF">
+                    {t(
+                      "classes.accumulator.modes.NOT_AGAINST_CLOCK_WITH_JUMP_OFF",
+                      "Not Against Clock (With Jump-Off)"
+                    )}
+                  </option>
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/85 mt-5">
+                  <input
+                    type="checkbox"
+                    className="accent-neon-cyan"
+                    checked={form.hasJoker}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        hasJoker: e.target.checked,
+                        jokerType: e.target.checked ? (form.jokerType === "NONE" ? "SINGLE_JOKER" : form.jokerType) : "NONE",
+                      })
+                    }
+                  />
+                  {t("classes.accumulator.hasJoker", "כולל Joker במכשול האחרון")}
+                </label>
+              </div>
+              <div>
+                <label className="label">{t("classes.accumulator.jokerType", "סוג Joker")}</label>
+                <select
+                  className="select mt-1 !h-9 !py-0 text-sm"
+                  value={form.jokerType}
+                  disabled={!form.hasJoker}
+                  onChange={(e) => setForm({ ...form, jokerType: e.target.value as JokerType })}
+                >
+                  <option value="NONE">{t("classes.accumulator.jokerTypes.NONE", "None")}</option>
+                  <option value="SINGLE_JOKER">{t("classes.accumulator.jokerTypes.SINGLE_JOKER", "Single Joker (200%)")}</option>
+                  <option value="DOUBLE_JOKER">{t("classes.accumulator.jokerTypes.DOUBLE_JOKER", "Double Joker (150% / 200%)")}</option>
+                </select>
+                <div className="text-[11px] text-white/50 mt-1">
+                  {t("classes.accumulator.jokerPositionHint", "Joker ממוקם במכשול האחרון בלבד")}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {form.tableType === "A" && form.competitionType === "TIME_60_80" && (
+            <div className="rounded-2xl border border-neon-cyan/30 bg-neon-cyan/[0.04] p-3 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5">
+              <div>
+                <label className="label">{t("classes.targetTimeSeconds", "Target Time (seconds)")}</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={3600}
+                  className="input mt-1 !h-9 !py-0 text-sm"
+                  value={form.targetTimeSeconds ?? ""}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      targetTimeSeconds: e.target.value ? sanitizePositiveInt(Number(e.target.value), 40) : null,
+                    })
+                  }
+                />
+                <div className="text-[11px] text-white/50 mt-1">
+                  {t(
+                    "classes.targetTimeHelp",
+                    "Ranking is by absolute closeness to target time (below or above). Nearest rider wins."
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end">
             <button type="submit" className="btn-primary" disabled={save.isPending}>

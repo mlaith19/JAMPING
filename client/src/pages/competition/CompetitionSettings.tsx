@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { Save, Trash2 } from "lucide-react";
 import { api } from "../../lib/api";
+import { getDefaultBellSettings, loadBellSettings, saveBellSettings } from "../../lib/bellSettings";
 import type { Competition, CompetitionStatus } from "../../lib/types";
 
 interface OutletCtx {
@@ -26,6 +27,9 @@ export function CompetitionSettings() {
     currency: "USD",
     notes: "",
   });
+  const [bellDurationSeconds, setBellDurationSeconds] = useState<number>(getDefaultBellSettings().durationSeconds);
+  const [bellAudioUrl, setBellAudioUrl] = useState<string>(getDefaultBellSettings().audioUrl);
+  const [bellAudioName, setBellAudioName] = useState<string>(getDefaultBellSettings().audioName);
 
   useEffect(() => {
     if (competition) {
@@ -40,6 +44,14 @@ export function CompetitionSettings() {
       });
     }
   }, [competition]);
+
+  useEffect(() => {
+    if (!competitionId) return;
+    const bell = loadBellSettings(competitionId);
+    setBellDurationSeconds(bell.durationSeconds);
+    setBellAudioUrl(bell.audioUrl);
+    setBellAudioName(bell.audioName);
+  }, [competitionId]);
 
   const save = useMutation({
     mutationFn: () =>
@@ -67,6 +79,11 @@ export function CompetitionSettings() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
+          saveBellSettings(competitionId, {
+            durationSeconds: bellDurationSeconds,
+            audioUrl: bellAudioUrl,
+            audioName: bellAudioName,
+          });
           save.mutate();
         }}
         className="space-y-4"
@@ -143,6 +160,65 @@ export function CompetitionSettings() {
             value={form.notes ?? ""}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
           />
+        </div>
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-3">
+          <div className="text-sm font-semibold text-white">
+            {t("settings.bellAudioTitle", "BELL sound in LIVE")}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="label">{t("settings.bellDuration", "Playback duration (seconds)")}</label>
+              <input
+                type="number"
+                min={1}
+                max={60}
+                className="input mt-1"
+                value={bellDurationSeconds}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  setBellDurationSeconds(Number.isFinite(n) ? Math.max(1, Math.min(60, Math.round(n))) : 5);
+                }}
+              />
+            </div>
+            <div>
+              <label className="label">{t("settings.bellFile", "Sound file (MP3)")}</label>
+              <input
+                type="file"
+                accept=".mp3,audio/mpeg"
+                className="input mt-1 file:mr-3 file:rounded-md file:border-0 file:bg-neon-cyan/15 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-neon-cyan"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const url = typeof reader.result === "string" ? reader.result : "";
+                    if (!url) return;
+                    setBellAudioUrl(url);
+                    setBellAudioName(file.name);
+                  };
+                  reader.readAsDataURL(file);
+                }}
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-white/60">
+            <span>
+              {t("settings.bellCurrentFile", "Current file")}:{" "}
+              <span className="font-mono text-white/85">{bellAudioName || "97bd2c.mp3"}</span>
+            </span>
+            <button
+              type="button"
+              className="btn-ghost !h-8 !py-0 text-xs"
+              onClick={() => {
+                const d = getDefaultBellSettings();
+                setBellDurationSeconds(d.durationSeconds);
+                setBellAudioUrl(d.audioUrl);
+                setBellAudioName(d.audioName);
+              }}
+            >
+              {t("settings.bellResetDefault", "Restore default (97bd2c.mp3 / 5s)")}
+            </button>
+          </div>
         </div>
         <div className="flex items-center justify-between pt-2">
           <button

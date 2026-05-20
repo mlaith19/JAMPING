@@ -27,7 +27,10 @@ const placeColors = [
 
 function fmt(ms: number | null) {
   if (ms == null) return "-";
-  return (ms / 1000).toFixed(2);
+  const s = Math.floor(ms / 1000);
+  const sec = String(s).padStart(2, "0");
+  const cs = String(Math.floor((ms % 1000) / 10)).padStart(2, "0");
+  return `${sec}:${cs}`;
 }
 
 export function CompetitionResults() {
@@ -113,7 +116,7 @@ export function CompetitionResults() {
                       <div className="text-xs text-white/55 truncate">{r.horseName}</div>
                       <div className="mt-1 flex items-center gap-3 text-xs">
                         <span className="text-neon-pink font-bold">{r.faults ?? 0} {t("results.faults")}</span>
-                        <span className="text-neon-cyan font-mono font-bold">{fmt(r.timeMs)}s</span>
+                        <span className="text-neon-cyan font-mono font-bold">{fmt(r.timeMs)}</span>
                       </div>
                     </div>
                   </div>

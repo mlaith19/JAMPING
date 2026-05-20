@@ -6,6 +6,8 @@ export const ridersRouter = Router();
 
 const RiderInput = z.object({
   name: z.string().min(1),
+  photo: z.string().optional().nullable(),
+  birthDate: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   country: z.string().optional().nullable(),
   club: z.string().optional().nullable(),
@@ -37,13 +39,24 @@ ridersRouter.get("/:id", async (req, res) => {
 
 ridersRouter.post("/", async (req, res) => {
   const data = RiderInput.parse(req.body);
-  const item = await prisma.rider.create({ data });
+  const item = await prisma.rider.create({
+    data: {
+      ...data,
+      birthDate: data.birthDate ? new Date(data.birthDate) : null,
+    },
+  });
   res.status(201).json(item);
 });
 
 ridersRouter.patch("/:id", async (req, res) => {
   const data = RiderInput.partial().parse(req.body);
-  const item = await prisma.rider.update({ where: { id: req.params.id }, data });
+  const item = await prisma.rider.update({
+    where: { id: req.params.id },
+    data: {
+      ...data,
+      birthDate: data.birthDate === undefined ? undefined : data.birthDate ? new Date(data.birthDate) : null,
+    },
+  });
   res.json(item);
 });
 

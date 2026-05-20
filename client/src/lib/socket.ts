@@ -6,7 +6,8 @@ export function getSocket(): Socket {
   if (!socket) {
     socket = io({
       path: "/socket.io",
-      transports: ["websocket"],
+      // WebSocket first; polling helps when the dev proxy drops WS upgrades
+      transports: ["websocket", "polling"],
       autoConnect: true,
     });
   }

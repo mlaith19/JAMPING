@@ -62,6 +62,16 @@ export class CompetitionTimer {
     return this.state;
   }
 
+  setMs(ms: number): TimerState {
+    const safeMs = Number.isFinite(ms) ? Math.max(0, Math.floor(ms)) : 0;
+    if (this.state.running && this.state.startedAt != null) {
+      this.state.startedAt = Date.now() - safeMs;
+    }
+    this.state.elapsedMs = safeMs;
+    this.tickHandler?.(this.state.elapsedMs);
+    return this.state;
+  }
+
   reset() {
     if (this.interval) clearInterval(this.interval);
     this.interval = null;

@@ -20,6 +20,7 @@ import { CompetitionReport } from "./pages/competition/CompetitionReport";
 import { CompetitionClassRules } from "./pages/competition/CompetitionClassRules";
 import { CompetitionCourseMap } from "./pages/competition/CompetitionCourseMap";
 import { AudienceDisplay } from "./pages/display/AudienceDisplay";
+import { RiderHorseRegistration } from "./pages/RiderHorseRegistration";
 
 export function App() {
   return (
@@ -48,6 +49,7 @@ export function App() {
 
         <Route path="horses" element={<Horses />} />
         <Route path="riders" element={<Riders />} />
+        <Route path="registration" element={<RiderHorseRegistration />} />
         <Route path="judges" element={<Judges />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

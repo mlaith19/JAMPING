@@ -100,7 +100,26 @@ async function getRankedResults(classId: string) {
     };
   });
 
-  let ranked = rankRuns(rows, cls.scoringType);
+  const rankingMode = ((cls as any).rankingMode ?? cls.scoringType ?? "FAULTS_TIME") as
+    | "FAULTS_TIME"
+    | "FAULTS_ONLY"
+    | "TIME_ONLY";
+  let ranked = rankRuns(rows, rankingMode);
+  if ((cls as any).competitionType === "TIME_60_80") {
+    const targetSec = Number((cls as any).targetTimeSeconds ?? cls.allowedTime ?? 40);
+    const targetMs = Math.max(1, targetSec) * 1000;
+    const valid = [...rows].filter((r) => r.status === "OK" && typeof r.timeMs === "number");
+    valid.sort((a, b) => {
+      const da = Math.abs((a.timeMs ?? Number.MAX_SAFE_INTEGER) - targetMs);
+      const db = Math.abs((b.timeMs ?? Number.MAX_SAFE_INTEGER) - targetMs);
+      if (da !== db) return da - db;
+      return (a.timeMs ?? Number.MAX_SAFE_INTEGER) - (b.timeMs ?? Number.MAX_SAFE_INTEGER);
+    });
+    const placed = valid.map((r, idx) => ({ ...r, place: idx + 1 }));
+    const placedIds = new Set(placed.map((p) => p.entryId));
+    const tail = rows.filter((r) => !placedIds.has(r.entryId)).map((r) => ({ ...r, place: null }));
+    ranked = [...placed, ...tail];
+  }
   if ((cls as any).competitionType === "ACCUMULATOR") {
     const againstClock =
       (cls as any).accumulatorMode === "AGAINST_CLOCK_NO_JUMP_OFF" ||

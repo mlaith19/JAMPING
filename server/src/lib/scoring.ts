@@ -1,4 +1,5 @@
 export type ScoringType = "FAULTS_TIME" | "TIME_ONLY" | "JUMP_OFF";
+export type RankingMode = "FAULTS_TIME" | "FAULTS_ONLY" | "TIME_ONLY";
 export type RunStatus = "PENDING" | "OK" | "RETIRED" | "ELIMINATED";
 
 export interface ScoringRules {
@@ -48,10 +49,12 @@ export function getTimeFaults(
   rules: ScoringRules
 ): number {
   if (allowedTimeSeconds == null || allowedTimeSeconds <= 0) return 0;
-  if (rules.timeFaultIntervalSeconds <= 0) return 0;
+  const standardPerSecondMode = (rules as any)?.competitionType === "STANDARD";
+  const intervalSeconds = standardPerSecondMode ? 1 : rules.timeFaultIntervalSeconds;
+  if (intervalSeconds <= 0) return 0;
   const overSec = timeMs / 1000 - allowedTimeSeconds;
   if (overSec <= 0) return 0;
-  return Math.ceil(overSec / rules.timeFaultIntervalSeconds) * rules.timeFaultPoints;
+  return Math.ceil(overSec / intervalSeconds) * rules.timeFaultPoints;
 }
 
 export function getJumpOffTimeFaults(
@@ -163,7 +166,7 @@ function computeObstacleFaults(input: RunCalculationInput): number {
   return input.obstacleFaults ?? 0;
 }
 
-export function rankRuns(rows: ResultRow[], scoring: ScoringType): ResultRow[] {
+export function rankRuns(rows: ResultRow[], scoring: ScoringType | RankingMode): ResultRow[] {
   const scored = rows.map((r) => ({ ...r }));
   const valid = scored.filter(
     (r) => r.status === "OK" && r.faults != null && r.timeMs != null
@@ -175,6 +178,11 @@ export function rankRuns(rows: ResultRow[], scoring: ScoringType): ResultRow[] {
   let sorted: ResultRow[];
   if (scoring === "TIME_ONLY") {
     sorted = [...valid].sort((a, b) => a.timeMs! - b.timeMs!);
+  } else if (scoring === "FAULTS_ONLY") {
+    sorted = [...valid].sort((a, b) => {
+      if ((a.faults ?? 0) !== (b.faults ?? 0)) return (a.faults ?? 0) - (b.faults ?? 0);
+      return (a.timeMs ?? 0) - (b.timeMs ?? 0);
+    });
   } else {
     sorted = [...valid].sort((a, b) => {
       if ((a.faults ?? 0) !== (b.faults ?? 0)) return (a.faults ?? 0) - (b.faults ?? 0);

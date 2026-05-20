@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <defs>
+    <radialGradient id="c" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#fda4af"/>
+      <stop offset="100%" stop-color="#9f1239"/>
+    </radialGradient>
+    <filter id="d">
+      <feDropShadow dx="0" dy="3" stdDeviation="2" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <circle cx="48" cy="46" r="28" fill="url(#c)" stroke="#ffe4e6" stroke-width="3" filter="url(#d)"/>
+  <text x="48" y="52" text-anchor="middle" fill="white" font-size="12" font-weight="800" font-family="system-ui,sans-serif">F</text>
+</svg>

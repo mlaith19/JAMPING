@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Globe, Wifi, WifiOff, ArrowLeft, LayoutDashboard } from "lucide-react";
+import { Globe, Wifi, WifiOff, ArrowLeft, LayoutDashboard, Sun, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -19,6 +19,7 @@ export function Topbar() {
   const { id = "" } = useParams();
   const [searchParams] = useSearchParams();
   const [connected, setConnected] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "regular">("dark");
   const classId = searchParams.get("classId") ?? "";
   const inCompetitionWorkspace = /^\/competitions\/[^/]+(\/|$)/.test(pathname);
   const currentTab = (() => {
@@ -61,6 +62,23 @@ export function Topbar() {
     };
   }, []);
 
+  useEffect(() => {
+    const saved = localStorage.getItem("ui-theme-v1");
+    if (saved === "regular" || saved === "dark") {
+      setTheme(saved);
+      document.documentElement.setAttribute("data-theme", saved);
+      return;
+    }
+    document.documentElement.setAttribute("data-theme", "dark");
+  }, []);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "regular" : "dark";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("ui-theme-v1", next);
+  }
+
   return (
     <header className="h-16 px-6 flex items-center justify-between border-b border-white/10 bg-ink-900/40 backdrop-blur-xl">
       <div className="min-w-0 flex items-center gap-3">
@@ -97,6 +115,15 @@ export function Topbar() {
           <span>{connected ? "Live" : "Offline"}</span>
         </div>
         <div className="flex items-center gap-1 p-1 rounded-full bg-white/[0.04] border border-white/10">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="px-2 py-1 rounded-full text-white/70 hover:text-white hover:bg-white/[0.08] transition"
+            title={theme === "dark" ? t("common.regularMode", "מצב רגיל") : t("common.darkMode", "מצב כהה")}
+            aria-label={theme === "dark" ? t("common.regularMode", "מצב רגיל") : t("common.darkMode", "מצב כהה")}
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
           <Globe className="w-4 h-4 text-white/50 ms-2 me-1" />
           {LANGS.map((l) => (
             <button

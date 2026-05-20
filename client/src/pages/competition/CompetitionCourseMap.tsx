@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { MapPinned, Trash2, GripVertical, RotateCcw, Layers, Maximize2, Minimize2, SlidersHorizontal, Wand2 } from "lucide-react";
 import clsx from "clsx";
-import type { Competition } from "../../lib/types";
-import { CourseMap3D, worldToPct, type RaycastGroundFn } from "./CourseMap3D";
+import type { Competition, ShowClass } from "../../lib/types";
+import { api } from "../../lib/api";
+import { CourseObstacleArt } from "./CourseObstacleArt";
+import { CourseMapEditPlan } from "./CourseMapEditPlan";
+import { CourseMapPremium } from "./CourseMapPremium";
 
 interface OutletCtx {
   competitionId: string;
@@ -12,6 +16,7 @@ interface OutletCtx {
 }
 
 const STORAGE_KEY = "course-map-state-v1";
+const VIEW_MODE_KEY = "course-map-view-mode-v1";
 
 const DEFAULT_START = { xPct: 10, yPct: 18 };
 const DEFAULT_FINISH = { xPct: 90, yPct: 82 };
@@ -19,7 +24,7 @@ const DEFAULT_FINISH = { xPct: 90, yPct: 82 };
 type ObstacleTemplate = {
   id: string;
   defaultColor: string;
-  shape: "vertical" | "oxer" | "triple" | "wall" | "water" | "liverpool" | "combination";
+  shape: "vertical" | "oxer" | "triple" | "wall" | "water" | "liverpool" | "combination" | "gate" | "plank";
 };
 
 const TEMPLATES: ObstacleTemplate[] = [
@@ -27,6 +32,8 @@ const TEMPLATES: ObstacleTemplate[] = [
   { id: "oxer", defaultColor: "#a855f7", shape: "oxer" },
   { id: "triple", defaultColor: "#f472b6", shape: "triple" },
   { id: "wall", defaultColor: "#94a3b8", shape: "wall" },
+  { id: "gate", defaultColor: "#8b5cf6", shape: "gate" },
+  { id: "plank", defaultColor: "#f97316", shape: "plank" },
   { id: "water", defaultColor: "#3b82f6", shape: "water" },
   { id: "liverpool", defaultColor: "#14b8a6", shape: "liverpool" },
   { id: "combination", defaultColor: "#f59e0b", shape: "combination" },
@@ -55,24 +62,16 @@ type MapState = {
   includedTemplateIds: string[];
 };
 
-/** סיבוב במקום — צעדים של 45° */
-const ROTATION_PRESETS = [0, 45, 90, 135, 180, 225, 270, 315] as const;
-
-function normalizeRotationDeg(deg: number): number {
-  if (!Number.isFinite(deg)) return 0;
-  const snapped = Math.round(deg / 45) * 45;
-  return ((snapped % 360) + 360) % 360;
-}
+type MapViewMode = "edit" | "presentation";
 
 function normalizeState(raw: unknown): MapState {
   const s = raw as Partial<MapState>;
   const obstaclesRaw = Array.isArray(s?.obstacles) ? s.obstacles : [];
   const obstacles: PlacedObstacle[] = obstaclesRaw.map((o) => {
     const ob = o as PlacedObstacle;
-    const raw = typeof ob.rotationDeg === "number" && Number.isFinite(ob.rotationDeg) ? ob.rotationDeg : 0;
     return {
       ...ob,
-      rotationDeg: normalizeRotationDeg(raw),
+      rotationDeg: 0,
     };
   });
   return {
@@ -169,122 +168,21 @@ function pctDistanceInMeters(
   return Math.hypot(dxM, dyM);
 }
 
-/** מכשול כ-svg — ללא מסגרת מרובעת; רק הצורה */
-function ObstacleArt({
-  shape,
-  color,
-  compact,
-  obstacleHeightM,
-}: {
-  shape: ObstacleTemplate["shape"];
-  color: string;
-  compact?: boolean;
-  obstacleHeightM?: number;
-}) {
-  /* על המפה — מימדי viewport רחבים + stretch אופקי; בפלטה — קומפקטי */
-  const w = compact ? 52 : 172;
-  const h = compact ? 60 : 124;
-  const heightScale = Math.max(0.55, Math.min(1.45, (obstacleHeightM ?? DEFAULT_OBSTACLE_HEIGHT_M) / 1.3));
-  const pole = (cx: number, y1: number, y2: number) => (
-    <line x1={cx} y1={y1} x2={cx} y2={y2} stroke={color} strokeWidth={3} strokeLinecap="round" />
-  );
-  const bar = (x1: number, x2: number, y: number, thick = 4) => (
-    <line x1={x1} y1={y} x2={x2} y2={y} stroke={color} strokeWidth={thick} strokeLinecap="round" />
-  );
-
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox="0 0 72 88"
-      preserveAspectRatio={compact ? "xMidYMid meet" : "none"}
-      className="overflow-visible drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)]"
-      style={{ transform: `scaleY(${heightScale})`, transformOrigin: "50% 100%" }}
-      aria-hidden
-    >
-      {shape === "vertical" && (
-        <>
-          {pole(22, 28, 78)}
-          {pole(50, 28, 78)}
-          {bar(22, 50, 32)}
-          <ellipse cx={36} cy={82} rx={22} ry={4} fill="rgba(255,255,255,0.06)" />
-        </>
-      )}
-      {shape === "oxer" && (
-        <>
-          {pole(18, 34, 76)}
-          {pole(54, 34, 76)}
-          {bar(18, 54, 36, 3.5)}
-          {bar(20, 52, 44, 3.5)}
-          <ellipse cx={36} cy={82} rx={24} ry={4} fill="rgba(255,255,255,0.06)" />
-        </>
-      )}
-      {shape === "triple" && (
-        <>
-          {pole(16, 40, 78)}
-          {pole(56, 40, 78)}
-          {bar(16, 34, 36, 3)}
-          {bar(18, 38, 46, 3)}
-          {bar(20, 42, 56, 3)}
-          <ellipse cx={36} cy={82} rx={24} ry={4} fill="rgba(255,255,255,0.06)" />
-        </>
-      )}
-      {shape === "wall" && (
-        <>
-          <rect x={14} y={34} width={44} height={38} rx={3} fill={`${color}55`} stroke={color} strokeWidth={2} />
-          {[0, 1, 2, 3, 4].map((i) => (
-            <line key={i} x1={18 + i * 9} y1={38} x2={18 + i * 9} y2={68} stroke={`${color}99`} strokeWidth={1} opacity={0.5} />
-          ))}
-          <ellipse cx={36} cy={78} rx={22} ry={4} fill="rgba(255,255,255,0.06)" />
-        </>
-      )}
-      {shape === "water" && (
-        <>
-          <ellipse cx={36} cy={58} rx={28} ry={14} fill={`${color}44`} stroke={color} strokeWidth={2} />
-          <ellipse cx={36} cy={56} rx={24} ry={10} fill={`${color}77`} opacity={0.6} />
-          <path
-            d="M12 58 Q24 52 36 58 T60 58"
-            fill="none"
-            stroke="rgba(255,255,255,0.35)"
-            strokeWidth={1.2}
-          />
-        </>
-      )}
-      {shape === "liverpool" && (
-        <>
-          {pole(20, 30, 72)}
-          {pole(52, 30, 72)}
-          {bar(20, 52, 34)}
-          <rect x={14} y={58} width={44} height={14} rx={3} fill={`${color}55`} stroke={color} strokeWidth={1.5} />
-          <rect x={16} y={60} width={40} height={8} rx={2} fill={`${color}88`} opacity={0.5} />
-        </>
-      )}
-      {shape === "combination" && (
-        <>
-          {pole(20, 32, 74)}
-          {pole(36, 32, 74)}
-          {bar(20, 36, 36)}
-          {pole(48, 38, 76)}
-          {pole(62, 38, 76)}
-          {bar(48, 62, 44)}
-          <ellipse cx={41} cy={82} rx={26} ry={4} fill="rgba(255,255,255,0.06)" />
-        </>
-      )}
-    </svg>
-  );
-}
-
 type GateKind = "start" | "finish";
 
 export function CompetitionCourseMap() {
   const { t, i18n } = useTranslation();
-  const { competitionId: _competitionId } = useOutletContext<OutletCtx>();
+  const { competitionId, competition } = useOutletContext<OutletCtx>();
   const [searchParams] = useSearchParams();
   const classId = searchParams.get("classId") ?? "";
   const mapRef = useRef<HTMLDivElement>(null);
   const asideRef = useRef<HTMLElement | null>(null);
-  const raycastGroundRef = useRef<RaycastGroundFn | null>(null);
-  const orbitRef = useRef<any>(null);
+  const { data: classes = [] } = useQuery<ShowClass[]>({
+    queryKey: ["classes", competitionId],
+    queryFn: () => api.get(`/classes?competitionId=${competitionId}`),
+    enabled: !!competitionId,
+  });
+  const activeClassName = classes.find((c) => c.id === classId)?.name;
   const [obstacles, setObstacles] = useState<PlacedObstacle[]>([]);
   const [paletteDragOver, setPaletteDragOver] = useState(false);
   const [startPct, setStartPct] = useState(DEFAULT_START);
@@ -298,6 +196,7 @@ export function CompetitionCourseMap() {
   const [selectedGate, setSelectedGate] = useState<GateKind | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mapViewMode, setMapViewMode] = useState<MapViewMode>("edit");
 
   useEffect(() => {
     const s = loadState(classId);
@@ -311,6 +210,16 @@ export function CompetitionCourseMap() {
     setIncludedTemplateIds(s.includedTemplateIds.length ? s.includedTemplateIds : TEMPLATES.map((t) => t.id));
     setSelectedId(null);
     setSelectedGate(null);
+    try {
+      const raw = localStorage.getItem(VIEW_MODE_KEY);
+      const all = raw ? (JSON.parse(raw) as Record<string, string>) : {};
+      const mode = all[classId];
+      if (mode === "premium" || mode === "presentation") setMapViewMode("presentation");
+      else if (mode === "edit3d" || mode === "edit") setMapViewMode("edit");
+      else setMapViewMode("edit");
+    } catch {
+      setMapViewMode("edit");
+    }
   }, [classId]);
 
   useEffect(() => {
@@ -325,6 +234,18 @@ export function CompetitionCourseMap() {
       includedTemplateIds,
     });
   }, [classId, obstacles, startPct, finishPct, arenaWidthM, arenaLengthM, targetObstacles, obstacleHeightM, includedTemplateIds]);
+
+  useEffect(() => {
+    if (!classId) return;
+    try {
+      const raw = localStorage.getItem(VIEW_MODE_KEY);
+      const all = raw ? (JSON.parse(raw) as Record<string, MapViewMode>) : {};
+      all[classId] = mapViewMode;
+      localStorage.setItem(VIEW_MODE_KEY, JSON.stringify(all));
+    } catch {
+      /* ignore */
+    }
+  }, [classId, mapViewMode]);
 
   useEffect(() => {
     if (!isFullscreen) return;
@@ -350,22 +271,12 @@ export function CompetitionCourseMap() {
     apply: (xPct: number, yPct: number) => void
   ) => {
     e.preventDefault();
-    if (orbitRef.current) orbitRef.current.enabled = false;
     const startX = e.clientX;
     const startY = e.clientY;
     const ox = initial.xPct;
     const oy = initial.yPct;
 
     const move = (ev: PointerEvent) => {
-      const ray = raycastGroundRef.current;
-      if (ray) {
-        const hit = ray(ev.clientX, ev.clientY);
-        if (hit) {
-          const { xPct, yPct } = worldToPct(hit.x, hit.z, arenaWidthM, arenaLengthM);
-          apply(xPct, yPct);
-          return;
-        }
-      }
       const el = mapRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
@@ -376,7 +287,6 @@ export function CompetitionCourseMap() {
       apply(xPct, yPct);
     };
     const up = () => {
-      if (orbitRef.current) orbitRef.current.enabled = true;
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
     };
@@ -393,15 +303,7 @@ export function CompetitionCourseMap() {
       const template = templateById(templateId);
       let xPct = 50;
       let yPct = 50;
-      const ray = raycastGroundRef.current;
-      if (ray) {
-        const hit = ray(e.clientX, e.clientY);
-        if (hit) {
-          const p = worldToPct(hit.x, hit.z, arenaWidthM, arenaLengthM);
-          xPct = p.xPct;
-          yPct = p.yPct;
-        }
-      } else if (mapRef.current) {
+      if (mapRef.current) {
         const rect = mapRef.current.getBoundingClientRect();
         xPct = Math.round(Math.min(96, Math.max(4, ((e.clientX - rect.left) / rect.width) * 100)));
         yPct = Math.round(Math.min(92, Math.max(8, ((e.clientY - rect.top) / rect.height) * 100)));
@@ -414,7 +316,7 @@ export function CompetitionCourseMap() {
         isDouble: template.shape === "combination",
         xPct,
         yPct,
-        rotationDeg: normalizeRotationDeg(0),
+        rotationDeg: 0,
       };
       setObstacles((prev) => [...prev, obs]);
       setSelectedId(obs.id);
@@ -529,13 +431,6 @@ export function CompetitionCourseMap() {
 
     const next: PlacedObstacle[] = points.map((p, i) => {
       const template = allowedTemplates[Math.floor(Math.random() * allowedTemplates.length)];
-      const prevP = i === 0 ? startPct : points[i - 1];
-      const nextP = i === points.length - 1 ? finishPct : points[i + 1];
-      const vx = nextP.xPct - prevP.xPct;
-      const vy = nextP.yPct - prevP.yPct;
-      const headingDeg = (Math.atan2(vy, vx) * 180) / Math.PI;
-      // זווית מכשול לפי כיוון דהירה מקומי; הצמדה ל-15° למראה טבעי אך נקי.
-      const snapped = Math.round(headingDeg / 15) * 15;
       return {
         id: crypto.randomUUID(),
         templateId: template.id,
@@ -544,7 +439,7 @@ export function CompetitionCourseMap() {
         isDouble: template.shape === "combination",
         xPct: p.xPct,
         yPct: p.yPct,
-        rotationDeg: normalizeRotationDeg(snapped),
+        rotationDeg: 0,
       };
     });
 
@@ -583,7 +478,6 @@ export function CompetitionCourseMap() {
   ) => {
     e.stopPropagation();
     e.preventDefault();
-    if (orbitRef.current) orbitRef.current.enabled = false;
     setSelectedId(o.id);
     setSelectedGate(null);
     const startX = e.clientX;
@@ -593,23 +487,14 @@ export function CompetitionCourseMap() {
     const id = o.id;
 
     const move = (ev: PointerEvent) => {
-      const ray = raycastGroundRef.current;
-      if (ray) {
-        const hit = ray(ev.clientX, ev.clientY);
-        if (hit) {
-          const { xPct, yPct } = worldToPct(hit.x, hit.z, arenaWidthM, arenaLengthM);
-          setObstacles((prev) => prev.map((ob) => (ob.id === id ? { ...ob, xPct, yPct } : ob)));
-        }
-      } else {
-        const el = mapRef.current;
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        const dx = ((ev.clientX - startX) / rect.width) * 100;
-        const dy = ((ev.clientY - startY) / rect.height) * 100;
-        const xPct = Math.round(Math.min(96, Math.max(4, ox + dx)));
-        const yPct = Math.round(Math.min(92, Math.max(8, oy + dy)));
-        setObstacles((prev) => prev.map((ob) => (ob.id === id ? { ...ob, xPct, yPct } : ob)));
-      }
+      const el = mapRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const dx = ((ev.clientX - startX) / rect.width) * 100;
+      const dy = ((ev.clientY - startY) / rect.height) * 100;
+      const xPct = Math.round(Math.min(96, Math.max(4, ox + dx)));
+      const yPct = Math.round(Math.min(92, Math.max(8, oy + dy)));
+      setObstacles((prev) => prev.map((ob) => (ob.id === id ? { ...ob, xPct, yPct } : ob)));
 
       const aside = asideRef.current;
       if (aside) {
@@ -620,7 +505,6 @@ export function CompetitionCourseMap() {
       }
     };
     const up = (ev: PointerEvent) => {
-      if (orbitRef.current) orbitRef.current.enabled = true;
       setPaletteDragOver(false);
       const aside = asideRef.current;
       if (aside) {
@@ -644,105 +528,190 @@ export function CompetitionCourseMap() {
   return (
     <div
       className={clsx(
-        "flex flex-col xl:flex-row gap-4 items-stretch min-h-[min(70vh,640px)]",
-        isFullscreen && "fixed inset-0 z-[70] p-4 bg-[#0b0f14]"
+        "flex flex-col xl:flex-row gap-4 items-stretch",
+        mapViewMode === "presentation"
+          ? "min-h-[min(88vh,920px)] xl:min-h-[min(86vh,900px)]"
+          : "min-h-[min(70vh,640px)]",
+        isFullscreen &&
+          (mapViewMode === "presentation"
+            ? "fixed inset-0 z-[70] p-4 bg-[#e8e4dc]"
+            : "fixed inset-0 z-[70] p-4 bg-[#0b0f14]")
       )}
       dir="ltr"
     >
       <div
         className={clsx(
-          "flex-1 min-w-0 rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.02] overflow-hidden flex flex-col",
-          isFullscreen && "bg-gradient-to-br from-[#0f1419] to-[#121823]"
+          "flex-1 min-w-0 rounded-2xl border overflow-hidden flex flex-col",
+          mapViewMode === "presentation"
+            ? "border-[#c4b59a]/60 bg-[#f7f4ec] shadow-[0_8px_40px_rgba(44,36,24,0.08)]"
+            : "border-slate-300/80 bg-slate-50",
+          isFullscreen &&
+            (mapViewMode === "presentation" ? "bg-[#faf8f3]" : "bg-gradient-to-br from-[#0f1419] to-[#121823]")
         )}
         dir="ltr"
       >
-        <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-white/10">
-          <div className="flex items-center gap-2 text-white">
-            <MapPinned className="w-5 h-5 text-neon-cyan" />
+        <div
+          className={clsx(
+            "flex items-center justify-between gap-2 px-4 py-2 border-b",
+            mapViewMode === "presentation"
+              ? "border-[#d6cec0]/90 bg-[#fffcf5]/80"
+              : "border-slate-200/90 bg-white/80"
+          )}
+        >
+          <div
+            className={clsx(
+              "flex items-center gap-2",
+              mapViewMode === "presentation" ? "text-[#2c2419]" : "text-slate-800"
+            )}
+          >
+            <MapPinned className={clsx("w-5 h-5", mapViewMode === "presentation" ? "text-amber-700" : "text-sky-700")} />
             <span className="font-display font-bold">{t("courseMap.title")}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => setSettingsOpen(true)}
-              className="btn-ghost !h-8 !py-0 text-xs text-white/85"
-              title={t("courseMap.arenaSettings")}
+              onClick={() => setMapViewMode("edit")}
+              className={clsx(
+                "btn-ghost !h-8 !py-0 text-xs",
+                mapViewMode === "edit" && "border-sky-600/50 bg-sky-100 text-sky-900",
+                mapViewMode === "presentation" && "text-stone-800 border-stone-300/60"
+              )}
             >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              {t("courseMap.arenaSettings")}
+              {t("courseMap.modeEdit")}
             </button>
             <button
               type="button"
-              onClick={buildAutoCourse}
-              className="btn-ghost !h-8 !py-0 text-xs text-emerald-300"
-              title={t("courseMap.autoBuild")}
+              onClick={() => setMapViewMode("presentation")}
+              className={clsx(
+                "btn-ghost !h-8 !py-0 text-xs",
+                mapViewMode === "presentation" && "border-amber-800/50 bg-amber-200/90 text-amber-950 font-semibold",
+                mapViewMode === "edit" && "border-slate-300 bg-white text-slate-700"
+              )}
             >
-              <Wand2 className="w-3.5 h-3.5" />
-              {t("courseMap.autoBuild")}
+              {t("courseMap.modePresentation")}
             </button>
+            {!(isFullscreen && mapViewMode === "presentation") && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setSettingsOpen(true)}
+                  className={clsx(
+                    "btn-ghost !h-8 !py-0 text-xs",
+                    mapViewMode === "presentation" ? "text-stone-800" : "text-slate-700"
+                  )}
+                  title={t("courseMap.arenaSettings")}
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  {t("courseMap.arenaSettings")}
+                </button>
+                <button
+                  type="button"
+                  onClick={buildAutoCourse}
+                  className={clsx(
+                    "btn-ghost !h-8 !py-0 text-xs",
+                    mapViewMode === "presentation" ? "text-emerald-800" : "text-emerald-700"
+                  )}
+                  title={t("courseMap.autoBuild")}
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  {t("courseMap.autoBuild")}
+                </button>
+              </>
+            )}
             <button
               type="button"
               onClick={() => setIsFullscreen((v) => !v)}
-              className="btn-ghost !h-8 !py-0 text-xs text-white/85"
+              className={clsx(
+                "btn-ghost !h-8 !py-0 text-xs",
+                mapViewMode === "presentation" ? "text-stone-800" : "text-slate-700"
+              )}
               title={isFullscreen ? t("courseMap.exitFullscreen") : t("courseMap.enterFullscreen")}
             >
               {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
               {isFullscreen ? t("courseMap.exitFullscreen") : t("courseMap.enterFullscreen")}
             </button>
-            <button type="button" onClick={clearMap} className="btn-ghost !h-8 !py-0 text-xs text-red-300">
-              <RotateCcw className="w-3.5 h-3.5" /> {t("courseMap.clear")}
-            </button>
+            {!(isFullscreen && mapViewMode === "presentation") && (
+              <button
+                type="button"
+                onClick={clearMap}
+                className={clsx(
+                  "btn-ghost !h-8 !py-0 text-xs",
+                  mapViewMode === "presentation" ? "text-red-700" : "text-red-700"
+                )}
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> {t("courseMap.clear")}
+              </button>
+            )}
           </div>
         </div>
         <div
           ref={mapRef}
           className={clsx(
-            "relative flex-1 min-h-[420px] m-3 rounded-xl border border-white/12 overflow-hidden",
-            isFullscreen && "min-h-0 h-[calc(100vh-9rem)]"
+            "relative flex-1 overflow-hidden",
+            mapViewMode === "presentation"
+              ? "min-h-[min(78vh,820px)] m-1 xl:m-2 rounded-xl border border-[#d4c4a8]/45"
+              : "min-h-[420px] m-3 rounded-xl border border-slate-300/85",
+            isFullscreen && "min-h-0 h-[calc(100vh-9rem)] m-2"
           )}
-          onDrop={onDropOnMap}
-          onDragOver={onDragOverMap}
+          onDrop={mapViewMode === "edit" ? onDropOnMap : undefined}
+          onDragOver={mapViewMode === "edit" ? onDragOverMap : undefined}
         >
-          <CourseMap3D
-            raycastGroundRef={raycastGroundRef}
-            orbitRef={orbitRef}
-            obstacles={obstacles}
-            templateById={templateById}
-            selectedId={selectedId}
-            setSelectedId={setSelectedId}
-            selectedGate={selectedGate}
-            setSelectedGate={setSelectedGate}
-            startPct={startPct}
-            finishPct={finishPct}
-            startLabel={t("courseMap.startSensor")}
-            finishLabel={t("courseMap.finishSensor")}
-            onPointerMissed={() => {
-              setSelectedId(null);
-              setSelectedGate(null);
-            }}
-            onObstacleDragHandle={(o, ev) => startDragObstacle(ev, o)}
-            onGateDragHandle={(kind, ev) => {
-              setSelectedGate(kind);
-              setSelectedId(null);
-              const pct = kind === "start" ? startPct : finishPct;
-              if (kind === "start") {
-                dragPercent(ev, pct, (x, y) => setStartPct({ xPct: x, yPct: y }));
-              } else {
-                dragPercent(ev, pct, (x, y) => setFinishPct({ xPct: x, yPct: y }));
-              }
-            }}
-            arenaWidthM={arenaWidthM}
-            arenaLengthM={arenaLengthM}
-            pathPoints={routePoints}
-          />
-          <div className="pointer-events-none absolute inset-x-0 top-2 z-[1] flex justify-center px-4">
-            <p className="text-[11px] text-slate-700 text-center bg-white/70 rounded-lg px-3 py-1.5 border border-slate-300/70 backdrop-blur-sm max-w-lg leading-snug">
-              {t("courseMap.view3dHint")}
-            </p>
-          </div>
-          {obstacles.length === 0 && (
+          {mapViewMode === "edit" ? (
+            <CourseMapEditPlan
+              obstacles={obstacles}
+              templateById={templateById}
+              selectedId={selectedId}
+              setSelectedId={setSelectedId}
+              selectedGate={selectedGate}
+              setSelectedGate={setSelectedGate}
+              startPct={startPct}
+              finishPct={finishPct}
+              startLabel={t("courseMap.startSensor")}
+              finishLabel={t("courseMap.finishSensor")}
+              onBackgroundPointerDown={() => {
+                setSelectedId(null);
+                setSelectedGate(null);
+              }}
+              onObstacleDragHandle={(o, ev) => startDragObstacle(ev, o)}
+              onGateDragHandle={(kind, ev) => {
+                setSelectedGate(kind);
+                setSelectedId(null);
+                const pct = kind === "start" ? startPct : finishPct;
+                if (kind === "start") {
+                  dragPercent(ev, pct, (x, y) => setStartPct({ xPct: x, yPct: y }));
+                } else {
+                  dragPercent(ev, pct, (x, y) => setFinishPct({ xPct: x, yPct: y }));
+                }
+              }}
+              pathPoints={routePoints}
+              obstacleHeightM={obstacleHeightM}
+            />
+          ) : (
+            <CourseMapPremium
+              obstacles={obstacles}
+              startPct={startPct}
+              finishPct={finishPct}
+              arenaWidthM={arenaWidthM}
+              arenaLengthM={arenaLengthM}
+              obstacleHeightM={obstacleHeightM}
+              obstacleLabel={(id) => t(`courseMap.obstacles.${id}`)}
+              obstacleShape={(id) => templateById(id).shape}
+              deckTitle={competition?.name}
+              deckSubtitle={activeClassName}
+            />
+          )}
+          {mapViewMode === "edit" && (
+            <div className="pointer-events-none absolute inset-x-0 top-2 z-[1] flex justify-center px-4">
+              <p className="text-[11px] text-slate-800 text-center bg-white/85 rounded-lg px-3 py-1.5 border border-slate-200/90 shadow-sm max-w-lg leading-snug">
+                {t("courseMap.editPlanHint")}
+              </p>
+            </div>
+          )}
+          {mapViewMode === "edit" && obstacles.length === 0 && (
             <div className="pointer-events-none absolute inset-x-0 bottom-8 flex justify-center px-4 z-[1]">
-              <p className="text-white/40 text-sm max-w-xs text-center">{t("courseMap.dropHint")}</p>
+              <p className="text-slate-700/90 text-sm max-w-xs text-center bg-white/50 rounded-lg px-2 py-1">
+                {t("courseMap.dropHint")}
+              </p>
             </div>
           )}
         </div>
@@ -751,20 +720,24 @@ export function CompetitionCourseMap() {
       <aside
         ref={asideRef}
         className={clsx(
-          "w-full xl:w-80 shrink-0 rounded-2xl border bg-white/[0.03] flex flex-col max-h-[70vh] overflow-hidden transition-shadow",
+          "w-full xl:w-80 shrink-0 rounded-2xl border flex flex-col max-h-[70vh] overflow-hidden transition-shadow",
+          mapViewMode === "edit" ? "bg-white border-slate-300/80" : "bg-white/[0.03]",
           isFullscreen && "max-h-[calc(100vh-2rem)]",
+          mapViewMode === "presentation" && "hidden",
           paletteDragOver
             ? "border-red-400/90 shadow-[0_0_0_2px_rgba(248,113,113,0.5)] bg-red-500/[0.08]"
-            : "border-white/10"
+            : mapViewMode === "edit"
+              ? "border-slate-300/80"
+              : "border-white/10"
         )}
         dir={i18n.dir()}
       >
-        <div className="px-4 py-3 border-b border-white/10">
-          <div className="flex items-center gap-2 text-white font-display font-bold">
-            <Layers className="w-5 h-5 text-neon-violet" />
+        <div className={clsx("px-4 py-3 border-b", mapViewMode === "edit" ? "border-slate-200" : "border-white/10")}>
+          <div className={clsx("flex items-center gap-2 font-display font-bold", mapViewMode === "edit" ? "text-slate-800" : "text-white")}>
+            <Layers className={clsx("w-5 h-5", mapViewMode === "edit" ? "text-sky-700" : "text-neon-violet")} />
             {t("courseMap.palette")}
           </div>
-          <p className="text-xs text-white/50 mt-1 leading-snug">{t("courseMap.paletteHint")}</p>
+          <p className={clsx("text-xs mt-1 leading-snug", mapViewMode === "edit" ? "text-slate-500" : "text-white/50")}>{t("courseMap.paletteHint")}</p>
           {paletteDragOver && (
             <p className="text-xs text-red-300 font-semibold mt-2">{t("courseMap.dropToDelete")}</p>
           )}
@@ -778,32 +751,37 @@ export function CompetitionCourseMap() {
                 e.dataTransfer.setData("application/course-obstacle", JSON.stringify({ templateId: tmpl.id }));
                 e.dataTransfer.effectAllowed = "copy";
               }}
-              className="rounded-xl border border-white/10 bg-white/[0.04] p-2 flex items-center gap-2 cursor-grab active:cursor-grabbing hover:bg-white/[0.07] transition"
+              className={clsx(
+                "rounded-xl border p-2 flex items-center gap-2 cursor-grab active:cursor-grabbing transition",
+                mapViewMode === "edit"
+                  ? "border-slate-200 bg-slate-50 hover:bg-slate-100"
+                  : "border-white/10 bg-white/[0.04] hover:bg-white/[0.07]"
+              )}
             >
-              <GripVertical className="w-4 h-4 text-white/35 shrink-0" />
+              <GripVertical className={clsx("w-4 h-4 shrink-0", mapViewMode === "edit" ? "text-slate-400" : "text-white/35")} />
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-white truncate">{t(`courseMap.obstacles.${tmpl.id}`)}</div>
-                <div className="text-[10px] text-white/45">{t("courseMap.dragToMap")}</div>
+                <div className={clsx("text-sm font-semibold truncate", mapViewMode === "edit" ? "text-slate-800" : "text-white")}>{t(`courseMap.obstacles.${tmpl.id}`)}</div>
+                <div className={clsx("text-[10px]", mapViewMode === "edit" ? "text-slate-500" : "text-white/45")}>{t("courseMap.dragToMap")}</div>
               </div>
               <div className="shrink-0 flex flex-col items-center">
-                <ObstacleArt shape={tmpl.shape} color={tmpl.defaultColor} compact obstacleHeightM={obstacleHeightM} />
+                <CourseObstacleArt shape={tmpl.shape} color={tmpl.defaultColor} compact obstacleHeightM={obstacleHeightM} />
               </div>
             </div>
           ))}
         </div>
 
         {selectedGate && (
-          <div className="border-t border-white/10 p-3 space-y-2 bg-white/[0.02]">
-            <div className="text-xs uppercase tracking-wider text-white/45 font-bold">{t("courseMap.gateEdit")}</div>
-            <p className="text-sm text-white/70 leading-snug">
+          <div className={clsx("border-t p-3 space-y-2", mapViewMode === "edit" ? "border-slate-200 bg-slate-50/80" : "border-white/10 bg-white/[0.02]")}>
+            <div className={clsx("text-xs uppercase tracking-wider font-bold", mapViewMode === "edit" ? "text-slate-500" : "text-white/45")}>{t("courseMap.gateEdit")}</div>
+            <p className={clsx("text-sm leading-snug", mapViewMode === "edit" ? "text-slate-700" : "text-white/70")}>
               {selectedGate === "start" ? t("courseMap.startSensorHint") : t("courseMap.finishSensorHint")}
             </p>
           </div>
         )}
 
         {selected && (
-          <div className="border-t border-white/10 p-3 space-y-3 bg-white/[0.02]">
-            <div className="text-xs uppercase tracking-wider text-white/45 font-bold">{t("courseMap.edit")}</div>
+          <div className={clsx("border-t p-3 space-y-3", mapViewMode === "edit" ? "border-slate-200 bg-slate-50/80" : "border-white/10 bg-white/[0.02]")}>
+            <div className={clsx("text-xs uppercase tracking-wider font-bold", mapViewMode === "edit" ? "text-slate-500" : "text-white/45")}>{t("courseMap.edit")}</div>
             <div>
               <label className="label">{t("courseMap.number")}</label>
               <input
@@ -856,31 +834,6 @@ export function CompetitionCourseMap() {
               />
               {t("courseMap.isDouble")}
             </label>
-            <div>
-              <label className="label">{t("courseMap.rotation")}</label>
-              <p className="text-[10px] text-white/45 mt-0.5 mb-2">{t("courseMap.rotationPresetsHint")}</p>
-              <div className="grid grid-cols-4 gap-1.5">
-                {ROTATION_PRESETS.map((deg) => (
-                  <button
-                    key={deg}
-                    type="button"
-                    className={clsx(
-                      "rounded-lg border py-2 text-xs font-mono font-bold transition",
-                      normalizeRotationDeg(selected.rotationDeg) === deg
-                        ? "border-neon-cyan bg-neon-cyan/20 text-white shadow-[0_0_12px_rgba(34,211,238,0.25)]"
-                        : "border-white/15 bg-white/[0.04] text-white/75 hover:bg-white/[0.08] hover:border-white/25"
-                    )}
-                    onClick={() =>
-                      setObstacles((prev) =>
-                        prev.map((o) => (o.id === selected.id ? { ...o, rotationDeg: deg } : o))
-                      )
-                    }
-                  >
-                    {deg}°
-                  </button>
-                ))}
-              </div>
-            </div>
             <button type="button" onClick={removeSelected} className="btn-danger w-full !py-2">
               <Trash2 className="w-4 h-4" /> {t("courseMap.remove")}
             </button>
