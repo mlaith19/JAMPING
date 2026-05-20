@@ -1168,7 +1168,7 @@ export function CompetitionLive() {
                   <Flag className="w-5 h-5" /> FINISH
                 </button>
                 <button
-                  onClick={handleToggleSensor}
+                  onClick={playBellSound}
                   className="btn-warn !h-14 text-base !bg-neon-amber !text-[#1d1602]"
                   disabled={!state.currentEntry || currentEntryLocked}
                 >

@@ -787,11 +787,11 @@ export function CompetitionCourseMap() {
               <input
                 type="number"
                 min={1}
-                max={99}
+                max={15}
                 className="input mt-1 !h-9 !py-0 text-sm"
                 value={selected.number}
                 onChange={(e) => {
-                  const n = Math.max(1, Math.min(99, Number(e.target.value) || 1));
+                  const n = Math.max(1, Math.min(15, Number(e.target.value) || 1));
                   setObstacles((prev) => prev.map((o) => (o.id === selected.id ? { ...o, number: n } : o)));
                 }}
               />

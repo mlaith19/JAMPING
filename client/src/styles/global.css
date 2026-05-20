@@ -117,18 +117,23 @@ body {
   }
   .input, .select, .textarea {
     @apply w-full px-3 py-2 rounded-xl border placeholder:text-white/30 focus:outline-none focus:ring-2 focus:border-transparent transition;
-    background: color-mix(in oklab, var(--c-card) 90%, transparent);
-    border-color: color-mix(in oklab, var(--c-border) 78%, transparent);
-    color: color-mix(in oklab, var(--c-fg) 90%, var(--c-muted-fg));
+    background-color: #111827;
+    border-color: #334155;
+    color: #f8fafc;
+    font-family: inherit;
+    appearance: none;
     --tw-ring-color: color-mix(in oklab, var(--c-info) 45%, transparent);
   }
   .select option {
-    background-color: #1a1f26;
-    color: #f7f7f7;
+    background-color: #111827;
+    color: #f8fafc;
   }
   .select optgroup {
-    background-color: #1a1f26;
-    color: #8b8b8b;
+    background-color: #111827;
+    color: #94a3b8;
+  }
+  .select::-ms-expand {
+    color: #f8fafc;
   }
   .label {
     @apply text-xs font-semibold uppercase tracking-wider;
