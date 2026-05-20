@@ -2,7 +2,7 @@ export type CompetitionStatus = "DRAFT" | "ACTIVE" | "FINISHED";
 export type ScoringType = "FAULTS_TIME" | "TIME_ONLY" | "JUMP_OFF";
 export type EntryStatus = "REGISTERED" | "SCRATCHED" | "ACTIVE" | "DONE";
 export type RunStatus = "PENDING" | "OK" | "RETIRED" | "ELIMINATED";
-export type DeviceType = "START" | "FINISH";
+export type DeviceType = "START" | "FINISH" | "OBSTACLE" | "RECEIVER";
 export type HorseSex = "MARE" | "STALLION" | "GELDING";
 export type TableType = "A" | "C";
 export type RankingMode = "FAULTS_TIME" | "FAULTS_ONLY" | "TIME_ONLY";
@@ -127,6 +127,11 @@ export interface Device {
   online: boolean;
   battery: number;
   lastTriggerAt?: string | null;
+  obstacleNumber?: number | null;
+  vl53FallenMm?: number;
+  wifiSsid?: string | null;
+  rssi?: number | null;
+  ipAddress?: string | null;
 }
 
 export interface ResultRow {

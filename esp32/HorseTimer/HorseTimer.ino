@@ -79,6 +79,7 @@
 enum DevRole  : uint8_t { ROLE_RECEIVER=0, ROLE_START=1, ROLE_FINISH=2, ROLE_OBSTACLE=3 };
 enum DevEvent : uint8_t { EVT_TRIGGER=0, EVT_HEARTBEAT=1, EVT_BATT=2,
                           EVT_OBSTACLE=3, EVT_FALLEN=4, EVT_ONLINE=5 };
+enum LedMode  { LED_OFF, LED_ON, LED_FAST, LED_SLOW, LED_PULSE };
 
 // ══════════════════════════════════════════════════════════════════
 //  NRF PACKET  — 32 bytes
@@ -172,7 +173,6 @@ unsigned long lastHeartbeatAt = 0;
 unsigned long lastBatteryAt   = 0;
 
 // LED
-enum LedMode { LED_OFF, LED_ON, LED_FAST, LED_SLOW, LED_PULSE };
 LedMode       ledMode  = LED_OFF;
 bool          ledState = false;
 unsigned long ledAt    = 0;
@@ -509,7 +509,7 @@ void wifiBegin() {
     savedSSID = ""; savedPass = "";
     generateDeviceId();
     runtimeDevTypeStr = "START"; runtimeRole = ROLE_START;
-    runtimeObsNum = 1; runtimeVl53FallenMm = VL53_FALLEN_MM;
+    runtimeObsNum = 1; runtimeVl53FallenMm = VL53_FALLEN_CM * 10;
     resolvedServerIP = BACKEND_HOST;
     ledBlink(5, 100, 50);
     startPortal();

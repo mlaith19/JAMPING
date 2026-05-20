@@ -58,6 +58,8 @@ enum JokerType {
 enum DeviceType {
   START
   FINISH
+  OBSTACLE
+  RECEIVER
 }
 
 enum HorseSex {
@@ -208,12 +210,17 @@ model Run {
 }
 
 model Device {
-  id            String     @id @default(cuid())
-  name          String
-  type          DeviceType
-  online        Boolean    @default(true)
-  battery       Int        @default(100)
-  lastTriggerAt DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id             String     @id @default(cuid())
+  name           String
+  type           DeviceType
+  online         Boolean    @default(false)
+  battery        Int        @default(100)
+  lastTriggerAt  DateTime?
+  obstacleNumber Int?
+  vl53FallenMm   Int        @default(80)
+  wifiSsid       String?
+  rssi           Int?
+  ipAddress      String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 }

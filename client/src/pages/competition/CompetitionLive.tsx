@@ -578,7 +578,23 @@ export function CompetitionLive() {
     bellAudioRef.current = audio;
     audio.currentTime = 0;
     void audio.play().catch(() => {
-      // ignore autoplay / loading errors
+      // MP3 failed (file missing or autoplay blocked) — synthesize a bell tone
+      try {
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.8);
+        gain.gain.setValueAtTime(0.6, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 1.2);
+      } catch {
+        // AudioContext unavailable — no sound
+      }
     });
     bellStopTimeoutRef.current = window.setTimeout(() => {
       audio.pause();
@@ -889,6 +905,7 @@ export function CompetitionLive() {
             ? "live.retired"
             : "live.elimination";
     showNotice(t(key), "info");
+    if (type === "ELIMINATION") playBellSound();
   }
 
   useEffect(() => {
@@ -1172,7 +1189,7 @@ export function CompetitionLive() {
                   className="btn-warn !h-14 text-base !bg-neon-amber !text-[#1d1602]"
                   disabled={!state.currentEntry || currentEntryLocked}
                 >
-                  <Bell className="w-5 h-5" /> BILL
+                  <Bell className="w-5 h-5" /> BELL
                 </button>
               </div>
 

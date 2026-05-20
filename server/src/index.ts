@@ -2,7 +2,10 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import http from "http";
+import os from "os";
+import dgram from "dgram";
 import { Server as IOServer } from "socket.io";
+import { Bonjour } from "bonjour-service";
 
 import { competitionsRouter } from "./rest/competitions.js";
 import { classesRouter } from "./rest/classes.js";
@@ -11,7 +14,7 @@ import { ridersRouter } from "./rest/riders.js";
 import { entriesRouter } from "./rest/entries.js";
 import { startListRouter } from "./rest/startlist.js";
 import { resultsRouter } from "./rest/results.js";
-import { devicesRouter } from "./rest/devices.js";
+import { devicesRouter, startHeartbeatWatcher } from "./rest/devices.js";
 
 import { registerWs } from "./ws/index.js";
 import { prisma } from "./db.js";
@@ -51,7 +54,14 @@ const corsOriginResolver = (
 app.use(cors({ origin: corsOriginResolver, credentials: true }));
 app.use(express.json({ limit: "2mb" }));
 
-app.get("/api/health", (_req, res) => res.json({ ok: true, time: Date.now() }));
+app.get("/api/health", (_req, res) => {
+  const nets = os.networkInterfaces();
+  const ips = Object.values(nets)
+    .flat()
+    .filter((n): n is os.NetworkInterfaceInfo => !!n && n.family === "IPv4" && !n.internal)
+    .map((n) => n.address);
+  res.json({ ok: true, time: Date.now(), port: PORT, ips, mdns: "horsetimer.local" });
+});
 app.get("/api/health/database", async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -94,6 +104,23 @@ server.on("error", (err: NodeJS.ErrnoException) => {
   process.exit(1);
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`Show Jumping API listening on http://localhost:${PORT}`);
+  await prisma.device.updateMany({ data: { online: false } });
+  startHeartbeatWatcher();
+
+  // mDNS (works on macOS/Linux; may need Firewall rule on Windows)
+  const bonjour = new Bonjour();
+  bonjour.publish({ name: "HorseTimer", type: "http", port: PORT, host: "horsetimer.local" });
+  console.log(`[mDNS] Advertising as horsetimer.local:${PORT}`);
+
+  // UDP broadcast discovery — ESP32 sends HORSETIMER_DISCOVER, we reply with our port
+  const udp = dgram.createSocket({ type: "udp4", reuseAddr: true });
+  udp.on("error", (err) => console.warn("[UDP] Discovery error:", err.message));
+  udp.on("message", (msg, rinfo) => {
+    if (msg.toString().trim() === "HORSETIMER_DISCOVER") {
+      udp.send(Buffer.from(`HORSETIMER:${PORT}`), rinfo.port, rinfo.address);
+    }
+  });
+  udp.bind(4001, () => console.log(`[UDP] Discovery responder on :4001`));
 });
