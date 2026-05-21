@@ -660,13 +660,16 @@ void httpSendHeartbeat() {
   if (!wifiConnected) return;
   if (resolvedServerIP == BACKEND_HOST) discoverServer();
 
-  StaticJsonDocument<192> doc;
+  StaticJsonDocument<256> doc;
   doc["battery"]        = readBatPct();
   doc["rssi"]           = (int)WiFi.RSSI();
   doc["type"]           = runtimeDevTypeStr;
   doc["obstacleNumber"] = runtimeObsNum;
   doc["ssid"]           = WiFi.SSID();
   doc["ip"]             = WiFi.localIP().toString();
+  if (runtimeRole == ROLE_OBSTACLE && tofReady && tofBaseline >= 0) {
+    doc["vl53Baseline"] = (int)tofBaseline;
+  }
   String body; serializeJson(doc, body);
 
   String path = "/api/devices/" + runtimeDevId + "/heartbeat";

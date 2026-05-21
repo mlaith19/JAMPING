@@ -5,7 +5,7 @@ import { useOutletContext } from "react-router-dom";
 import {
   Zap, RotateCcw, Trash2, Battery, BatteryLow,
   Radio, RadioTower, Target, Antenna, Settings2, Wifi,
-  SignalHigh, Server, Network,
+  SignalHigh, Server, Network, AlertTriangle, Crosshair,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../../lib/api";
@@ -29,6 +29,18 @@ interface SettingsForm {
   vl53FallenMm: number;
 }
 
+const CAL_KEY = (id: string) => `ht-vl53-cal-${id}`;
+const CAL_INTERVAL_MS = 12 * 60 * 60 * 1000; // 12 hours
+
+function lastCalibrationMs(id: string): number {
+  const v = localStorage.getItem(CAL_KEY(id));
+  return v ? Number(v) : 0;
+}
+
+function needsCalibration(id: string): boolean {
+  return Date.now() - lastCalibrationMs(id) > CAL_INTERVAL_MS;
+}
+
 export function CompetitionDevices() {
   const { t } = useTranslation();
   const { competitionId } = useOutletContext<OutletCtx>();
@@ -36,6 +48,7 @@ export function CompetitionDevices() {
   const [flash, setFlash] = useState<string | null>(null);
   const [settingsDevice, setSettingsDevice] = useState<Device | null>(null);
   const [settingsForm, setSettingsForm] = useState<SettingsForm>({ name: "", type: "START", obstacleNumber: 1, vl53FallenMm: 80 });
+  const [vl53Readings, setVl53Readings] = useState<Record<string, { mm: number; at: number }>>({});
 
   const { data = [] } = useQuery<Device[]>({
     queryKey: ["devices"],
@@ -66,13 +79,19 @@ export function CompetitionDevices() {
       qc.invalidateQueries({ queryKey: ["devices"] });
     };
     const onStatus = () => qc.invalidateQueries({ queryKey: ["devices"] });
+    const onVl53 = (p: any) => {
+      if (!p?.deviceId || p.mm == null) return;
+      setVl53Readings(prev => ({ ...prev, [p.deviceId]: { mm: p.mm, at: p.at ?? Date.now() } }));
+    };
     s.on("sensor:triggered", onTrigger);
     s.on("device:status", onStatus);
     s.on("device:registered", onStatus);
+    s.on("device:vl53reading", onVl53);
     return () => {
       s.off("sensor:triggered", onTrigger);
       s.off("device:status", onStatus);
       s.off("device:registered", onStatus);
+      s.off("device:vl53reading", onVl53);
     };
   }, [qc]);
 
@@ -143,6 +162,7 @@ export function CompetitionDevices() {
             const isFlash = flash === d.id;
             const Icon = DEVICE_ICON[d.type] ?? Radio;
             const lowBattery = d.battery < 20;
+            const calWarning = d.type === "OBSTACLE" && d.online && needsCalibration(d.id);
             return (
               <motion.div
                 key={d.id}
@@ -217,6 +237,13 @@ export function CompetitionDevices() {
                           <SignalHigh className="w-3 h-3" /> {d.rssi} dBm
                         </span>
                       )}
+                    </div>
+                  )}
+
+                  {calWarning && (
+                    <div className="flex items-center gap-1.5 mt-2 px-2 py-1.5 rounded-lg bg-neon-amber/10 border border-neon-amber/30 text-[11px] text-neon-amber">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      VL53 calibration required (12h+)
                     </div>
                   )}
 
@@ -348,6 +375,38 @@ export function CompetitionDevices() {
                   <p className="text-xs text-white/40 mb-2">
                     How many cm the bar must rise for the sensor to detect a fall
                   </p>
+
+                  {/* Live sensor reading */}
+                  {(() => {
+                    const r = vl53Readings[settingsDevice.id];
+                    const ageSec = r ? Math.round((Date.now() - r.at) / 1000) : null;
+                    return (
+                      <div className="glass rounded-lg px-3 py-2 mb-3 flex items-center gap-3 text-sm">
+                        <Crosshair className="w-4 h-4 text-neon-cyan/70 shrink-0" />
+                        {r ? (
+                          <>
+                            <span className="text-white/50">Sensor reading:</span>
+                            <span className="font-mono text-neon-cyan font-bold">
+                              {Math.round(r.mm / 10)} cm
+                            </span>
+                            <span className="text-white/30 text-xs">{ageSec}s ago</span>
+                            <button
+                              type="button"
+                              className="ms-auto btn-ghost !py-0.5 !px-2 text-xs"
+                              onClick={() => setSettingsForm({ ...settingsForm, vl53FallenMm: r.mm })}
+                            >
+                              Use
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-white/35 text-xs">
+                            Waiting for sensor reading… (next heartbeat in ~15s)
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   <div className="flex items-center gap-3">
                     <input
                       type="range"
@@ -366,16 +425,17 @@ export function CompetitionDevices() {
                     <button
                       type="button"
                       className="btn-primary !py-1.5 !px-4 text-sm shrink-0"
-                      onClick={() =>
-                        applyVl53.mutate({ id: settingsDevice!.id, vl53FallenMm: settingsForm.vl53FallenMm })
-                      }
+                      onClick={() => {
+                        localStorage.setItem(CAL_KEY(settingsDevice!.id), String(Date.now()));
+                        applyVl53.mutate({ id: settingsDevice!.id, vl53FallenMm: settingsForm.vl53FallenMm });
+                      }}
                       disabled={applyVl53.isPending}
                     >
                       {applyVl53.isPending ? "…" : "Set"}
                     </button>
                   </div>
                   <p className="text-[11px] text-white/30 mt-1.5">
-                    Saved: {Math.round((settingsDevice.vl53FallenMm ?? 80) / 10)} cm · Applied on next heartbeat
+                    Saved on device: {Math.round((settingsDevice.vl53FallenMm ?? 80) / 10)} cm · Applied on next heartbeat
                   </p>
                 </div>
               </>

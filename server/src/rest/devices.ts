@@ -152,10 +152,11 @@ const HeartbeatInput = z.object({
   obstacleNumber: z.number().int().min(0).max(15).optional(),
   ssid: z.string().optional(),
   ip: z.string().optional(),
+  vl53Baseline: z.number().int().min(0).max(10000).optional(),
 });
 
 devicesRouter.post("/:id/heartbeat", async (req, res) => {
-  const { battery, rssi, type, obstacleNumber, ssid, ip } = HeartbeatInput.parse(req.body);
+  const { battery, rssi, type, obstacleNumber, ssid, ip, vl53Baseline } = HeartbeatInput.parse(req.body);
 
   let dev = await prisma.device.findUnique({ where: { id: req.params.id } });
 
@@ -192,6 +193,14 @@ devicesRouter.post("/:id/heartbeat", async (req, res) => {
   }
 
   recordHeartbeat(req.params.id);
+
+  if (vl53Baseline !== undefined) {
+    broadcast("device:vl53reading", {
+      deviceId: req.params.id,
+      mm: vl53Baseline,
+      at: Date.now(),
+    });
+  }
 
   res.json({
     ok: true,
