@@ -131,6 +131,8 @@ export function CompetitionLive() {
   const stateRef = useRef(state);
   stateRef.current = state;
   const [entrySnapshots, setEntrySnapshots] = useState<Record<string, EntryLiveSnapshot>>({});
+  const entrySnapshotsRef = useRef(entrySnapshots);
+  entrySnapshotsRef.current = entrySnapshots;
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const manualModeEnabled = false;
   const [readinessIssues, setReadinessIssues] = useState<string[]>([]);
@@ -145,6 +147,7 @@ export function CompetitionLive() {
   const displayWindowRef = useRef<Window | null>(null);
   const bellAudioRef = useRef<HTMLAudioElement | null>(null);
   const bellStopTimeoutRef = useRef<number | null>(null);
+  const pendingObstacleTimers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 
   function showNotice(message: string, type: NoticeState["type"] = "info") {
     setNotice({ message, type });
@@ -289,7 +292,7 @@ export function CompetitionLive() {
     };
     const onRiderCurrent = (p: any) => {
       if (p.classId !== classId) return;
-      const snapshot = entrySnapshots[p.entry?.id];
+      const snapshot = entrySnapshotsRef.current[p.entry?.id];
       setState((prev) => ({
         ...prev,
         currentEntry: p.entry,
@@ -393,12 +396,31 @@ export function CompetitionLive() {
     };
     const onObstacleEvent = (p: any) => {
       const { running, currentEntry } = stateRef.current;
-      if (!running || !currentEntry || !p.photoTriggered) return;
+      if (!running || !currentEntry) return;
       const n = p.obstacleNumber;
       if (!n || n < 1) return;
-      const outcome = p.fallen ? "KNOCKDOWN" : "CLEAR";
-      s.emit("standard:obstacle", { classId, obstacleNumber: n, outcome });
-      if (p.fallen) s.emit("fault:add", { classId, type: "KNOCKDOWN" });
+
+      if (p.fallen) {
+        // VL53 confirms fallen → cancel pending CLEAR, mark KNOCKDOWN immediately
+        const existing = pendingObstacleTimers.current.get(n);
+        if (existing !== undefined) {
+          clearTimeout(existing);
+          pendingObstacleTimers.current.delete(n);
+        }
+        s.emit("standard:obstacle", { classId, obstacleNumber: n, outcome: "KNOCKDOWN" });
+        s.emit("fault:add", { classId, type: "KNOCKDOWN" });
+      } else if (p.photoTriggered) {
+        // Photo triggered, VL53 not fallen yet — wait 1s for VL53 confirmation
+        if (pendingObstacleTimers.current.has(n)) return;
+        const timer = setTimeout(() => {
+          pendingObstacleTimers.current.delete(n);
+          const { running: r, currentEntry: ce } = stateRef.current;
+          if (r && ce) {
+            s.emit("standard:obstacle", { classId, obstacleNumber: n, outcome: "CLEAR" });
+          }
+        }, 1000);
+        pendingObstacleTimers.current.set(n, timer);
+      }
     };
     const onConnect = () => {
       // Socket.io drops rooms on reconnect; rejoin automatically.
@@ -428,6 +450,8 @@ export function CompetitionLive() {
     s.on("connect", onConnect);
 
     return () => {
+      for (const t of pendingObstacleTimers.current.values()) clearTimeout(t);
+      pendingObstacleTimers.current.clear();
       s.emit("class:leave", { classId });
       s.off("class:state", onState);
       s.off("timer:tick", onTick);
@@ -451,7 +475,7 @@ export function CompetitionLive() {
       s.off("obstacle:event", onObstacleEvent);
       s.off("connect", onConnect);
     };
-  }, [classId, qc, t, entrySnapshots]);
+  }, [classId, qc, t]);
 
   const classEntriesSorted = useMemo(() => {
     if (!classDetail?.entries?.length) return [];
