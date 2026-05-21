@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useOutletContext } from "react-router-dom";
 import {
   Zap, RotateCcw, Trash2, Battery, BatteryLow,
   Radio, RadioTower, Target, Antenna, Settings2, Wifi,
@@ -8,9 +9,11 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../../lib/api";
-import type { Device, DeviceType } from "../../lib/types";
+import type { Device, DeviceType, ShowClass } from "../../lib/types";
 import { Modal } from "../../components/ui/Modal";
 import { getSocket } from "../../lib/socket";
+
+interface OutletCtx { competitionId: string; }
 
 const DEVICE_ICON: Record<DeviceType, React.ElementType> = {
   START: Radio,
@@ -28,6 +31,7 @@ interface SettingsForm {
 
 export function CompetitionDevices() {
   const { t } = useTranslation();
+  const { competitionId } = useOutletContext<OutletCtx>();
   const qc = useQueryClient();
   const [flash, setFlash] = useState<string | null>(null);
   const [settingsDevice, setSettingsDevice] = useState<Device | null>(null);
@@ -43,6 +47,15 @@ export function CompetitionDevices() {
     queryFn: () => api.get("/health"),
     staleTime: 60_000,
   });
+
+  const { data: classes = [] } = useQuery<ShowClass[]>({
+    queryKey: ["classes", competitionId],
+    queryFn: () => api.get(`/classes?competitionId=${competitionId}`),
+    enabled: !!competitionId,
+    staleTime: 30_000,
+  });
+
+  const maxObstacleNum = classes.reduce((acc, c) => Math.max(acc, c.maxObstacles ?? 12), 1);
 
   useEffect(() => {
     const s = getSocket();
@@ -312,17 +325,19 @@ export function CompetitionDevices() {
             {settingsForm.type === "OBSTACLE" && (
               <>
                 <div>
-                  <label className="label">Obstacle Number (1–15)</label>
-                  <input
-                    type="number"
+                  <label className="label">Obstacle Number (1–{maxObstacleNum})</label>
+                  <select
                     className="input mt-1"
-                    min={1}
-                    max={15}
+                    style={{ background: "#1f2937", color: "#f9fafb" }}
                     value={settingsForm.obstacleNumber || 1}
                     onChange={(e) =>
                       setSettingsForm({ ...settingsForm, obstacleNumber: Number(e.target.value) })
                     }
-                  />
+                  >
+                    {Array.from({ length: maxObstacleNum }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="label">VL53 Fallen Threshold (cm)</label>

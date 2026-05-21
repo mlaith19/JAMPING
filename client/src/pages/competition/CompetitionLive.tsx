@@ -1352,6 +1352,7 @@ export function CompetitionLive() {
                   const isDone = !!current;
                   const isRefusal = isDone && current?.notes === "REFUSAL";
                   const isKnockdown = isDone && current?.outcome === "KNOCKDOWN" && !isRefusal;
+                  const obsDev = devices.find(d => d.type === "OBSTACLE" && d.obstacleNumber === n);
                   return (
                     <div
                       key={n}
@@ -1384,7 +1385,18 @@ export function CompetitionLive() {
                               : t("live.accumulator.done", "בוצע")}
                         </div>
                       )}
-                      <div className="text-xs font-semibold text-white/85">{n}</div>
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="text-xs font-semibold text-white/85">{n}</span>
+                        {obsDev && (
+                          <span
+                            className={clsx(
+                              "inline-block w-1.5 h-1.5 rounded-full",
+                              obsDev.online ? "bg-neon-lime" : "bg-white/25"
+                            )}
+                            title={obsDev.online ? obsDev.name : `${obsDev.name} (offline)`}
+                          />
+                        )}
+                      </div>
                       <div className="space-y-1">
                         <button
                           className={clsx(
