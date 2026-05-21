@@ -128,6 +128,8 @@ export function CompetitionLive() {
   const [showAllRanking, setShowAllRanking] = useState(false);
   const [activeDisplayView, setActiveDisplayView] = useState<"round" | "finish" | "leaderboard" | null>(null);
   const [state, setState] = useState<LiveState>(initState);
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const [entrySnapshots, setEntrySnapshots] = useState<Record<string, EntryLiveSnapshot>>({});
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const manualModeEnabled = false;
@@ -389,6 +391,15 @@ export function CompetitionLive() {
       if (p?.classId !== classId) return;
       playBellSound();
     };
+    const onObstacleEvent = (p: any) => {
+      const { running, currentEntry } = stateRef.current;
+      if (!running || !currentEntry || !p.photoTriggered) return;
+      const n = p.obstacleNumber;
+      if (!n || n < 1) return;
+      const outcome = p.fallen ? "KNOCKDOWN" : "CLEAR";
+      s.emit("standard:obstacle", { classId, obstacleNumber: n, outcome });
+      if (p.fallen) s.emit("fault:add", { classId, type: "KNOCKDOWN" });
+    };
     const onConnect = () => {
       // Socket.io drops rooms on reconnect; rejoin automatically.
       joinClassRoom();
@@ -413,6 +424,7 @@ export function CompetitionLive() {
     s.on("accumulator:updated", onAccumulatorUpdated);
     s.on("standard:updated", onStandardUpdated);
     s.on("bell:ring", onBellRing);
+    s.on("obstacle:event", onObstacleEvent);
     s.on("connect", onConnect);
 
     return () => {
@@ -436,6 +448,7 @@ export function CompetitionLive() {
       s.off("accumulator:updated", onAccumulatorUpdated);
       s.off("standard:updated", onStandardUpdated);
       s.off("bell:ring", onBellRing);
+      s.off("obstacle:event", onObstacleEvent);
       s.off("connect", onConnect);
     };
   }, [classId, qc, t, entrySnapshots]);
@@ -1387,14 +1400,16 @@ export function CompetitionLive() {
                       )}
                       <div className="flex items-center justify-center gap-1">
                         <span className="text-xs font-semibold text-white/85">{n}</span>
-                        {obsDev && (
+                        {obsDev ? (
                           <span
                             className={clsx(
                               "inline-block w-1.5 h-1.5 rounded-full",
-                              obsDev.online ? "bg-neon-lime" : "bg-white/25"
+                              obsDev.online ? "bg-neon-lime" : "bg-red-500"
                             )}
                             title={obsDev.online ? obsDev.name : `${obsDev.name} (offline)`}
                           />
+                        ) : (
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500/50" title="No sensor assigned" />
                         )}
                       </div>
                       <div className="space-y-1">

@@ -308,18 +308,16 @@ export function CompetitionDevices() {
               </select>
             </div>
 
-            {/* Name — only for non-obstacle devices */}
-            {settingsForm.type !== "OBSTACLE" && (
-              <div>
-                <label className="label">Display Name</label>
-                <input
-                  className="input mt-1"
-                  value={settingsForm.name}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, name: e.target.value })}
-                  required
-                />
-              </div>
-            )}
+            {/* Name */}
+            <div>
+              <label className="label">Display Name</label>
+              <input
+                className="input mt-1"
+                value={settingsForm.name}
+                onChange={(e) => setSettingsForm({ ...settingsForm, name: e.target.value })}
+                required
+              />
+            </div>
 
             {/* Obstacle number + VL53 — obstacle only */}
             {settingsForm.type === "OBSTACLE" && (
