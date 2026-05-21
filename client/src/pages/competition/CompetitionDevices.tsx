@@ -385,8 +385,8 @@ export function CompetitionDevices() {
                         <Crosshair className="w-4 h-4 text-neon-cyan/70 shrink-0" />
                         {r ? (
                           <>
-                            <span className="text-white/50">Sensor reading:</span>
-                            <span className="font-mono text-neon-cyan font-bold">
+                            <span className="text-white/50">Live:</span>
+                            <span className="font-mono text-neon-cyan font-bold text-base">
                               {Math.round(r.mm / 10)} cm
                             </span>
                             <span className="text-white/30 text-xs">{ageSec}s ago</span>
@@ -400,7 +400,7 @@ export function CompetitionDevices() {
                           </>
                         ) : (
                           <span className="text-white/35 text-xs">
-                            Waiting for sensor reading… (next heartbeat in ~15s)
+                            Waiting for live reading… (flash updated firmware first)
                           </span>
                         )}
                       </div>

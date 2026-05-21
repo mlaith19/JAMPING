@@ -145,6 +145,12 @@ devicesRouter.post("/:id/obstacle", async (req, res) => {
   res.json({ ok: true });
 });
 
+devicesRouter.post("/:id/vl53", (req, res) => {
+  const { mm } = z.object({ mm: z.number().int().min(0).max(10000) }).parse(req.body);
+  broadcast("device:vl53reading", { deviceId: req.params.id, mm, at: Date.now() });
+  res.json({ ok: true });
+});
+
 const HeartbeatInput = z.object({
   battery: z.number().int().min(0).max(100).optional(),
   rssi: z.number().int().optional(),

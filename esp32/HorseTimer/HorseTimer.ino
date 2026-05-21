@@ -159,14 +159,17 @@ unsigned long lastGateTrigAt = 0;
 
 // VL53L0X (OBSTACLE mode)
 Adafruit_VL53L0X tof;
-bool     tofReady          = false;
-int32_t  tofBaseline       = -1;
-int      baselineCount     = 0;
-int32_t  baselineSum       = 0;
-bool     tofFallen         = false;
-bool     tofFallenReported = false;
-unsigned long tofFallenAt  = 0;
-unsigned long lastObsAt    = 0;
+bool          tofReady          = false;
+int32_t       tofBaseline       = -1;
+int           baselineCount     = 0;
+int32_t       baselineSum       = 0;
+bool          tofFallen         = false;
+bool          tofFallenReported = false;
+unsigned long tofFallenAt       = 0;
+unsigned long lastObsAt         = 0;
+uint16_t      tofLastMm         = 0;   // most recent valid reading
+uint16_t      tofSentMm         = 0;   // last value sent to server
+unsigned long tofLiveSentAt     = 0;   // when we last sent a live reading
 
 // Timers
 unsigned long lastHeartbeatAt = 0;
@@ -697,6 +700,19 @@ void httpSendHeartbeat() {
   http.end();
 }
 
+void httpSendVl53Reading(uint16_t mm) {
+  if (!wifiConnected) return;
+  HTTPClient http;
+  String url = "http://" + resolvedServerIP + ":" + BACKEND_PORT
+               + "/api/devices/" + runtimeDevId + "/vl53";
+  http.begin(url);
+  http.setTimeout(1000);
+  http.addHeader("Content-Type", "application/json");
+  String body = "{\"mm\":" + String((int)mm) + "}";
+  http.POST(body);
+  http.end();
+}
+
 void httpSendObstacle(bool photoTriggered, bool fallen) {
   StaticJsonDocument<128> doc;
   doc["obstacleNumber"] = runtimeObsNum;
@@ -829,6 +845,7 @@ void vl53Update() {
   if (!tofReady || !tof.isRangeComplete()) return;
   uint16_t mm = tof.readRangeResult();
   if (mm >= 8190) return;
+  tofLastMm = mm;
 
   if (tofBaseline < 0) {
     baselineSum += mm;
@@ -1052,6 +1069,20 @@ void loop() {
   // VL53 standalone fall (no horse passed — wind/vibration)
   if (runtimeRole == ROLE_OBSTACLE) {
     vl53Update();
+
+    // Live calibration stream — send whenever reading changes ≥10 mm (1 cm)
+    // or at least every 2 s so the UI stays alive
+    if (tofLastMm > 0 && wifiConnected) {
+      unsigned int diff = (tofLastMm > tofSentMm)
+                          ? (tofLastMm - tofSentMm)
+                          : (tofSentMm - tofLastMm);
+      if (diff >= 10 || (now - tofLiveSentAt >= 2000UL)) {
+        httpSendVl53Reading(tofLastMm);
+        tofSentMm      = tofLastMm;
+        tofLiveSentAt  = now;
+      }
+    }
+
     if (tofFallen && !tofFallenReported && (now - lastObsAt > (unsigned long)TRIGGER_COOLDOWN_MS)) {
       tofFallenReported = true;
       lastObsAt = now;
