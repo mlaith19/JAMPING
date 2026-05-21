@@ -102,6 +102,12 @@ export function CompetitionDevices() {
     },
   });
 
+  const applyVl53 = useMutation({
+    mutationFn: ({ id, vl53FallenMm }: { id: string; vl53FallenMm: number }) =>
+      api.patch(`/devices/${id}`, { vl53FallenMm }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["devices"] }),
+  });
+
   function openSettings(d: Device) {
     setSettingsDevice(d);
     setSettingsForm({
@@ -339,21 +345,37 @@ export function CompetitionDevices() {
                 </div>
                 <div>
                   <label className="label">VL53 Fallen Threshold (cm)</label>
-                  <p className="text-xs text-white/40 mb-1">
+                  <p className="text-xs text-white/40 mb-2">
                     How many cm the bar must rise for the sensor to detect a fall
                   </p>
-                  <input
-                    type="number"
-                    className="input mt-1"
-                    min={1}
-                    max={200}
-                    value={Math.round(settingsForm.vl53FallenMm / 10)}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, vl53FallenMm: Number(e.target.value) * 10 })
-                    }
-                  />
-                  <p className="text-[11px] text-white/30 mt-1">
-                    On device: {Math.round((settingsDevice.vl53FallenMm ?? 80) / 10)} cm · Applied on next heartbeat
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min={1}
+                      max={200}
+                      step={1}
+                      value={Math.round(settingsForm.vl53FallenMm / 10)}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, vl53FallenMm: Number(e.target.value) * 10 })
+                      }
+                      className="flex-1 accent-[#22d3ee]"
+                    />
+                    <span className="font-mono text-white/90 text-sm w-14 text-center shrink-0">
+                      {Math.round(settingsForm.vl53FallenMm / 10)} cm
+                    </span>
+                    <button
+                      type="button"
+                      className="btn-primary !py-1.5 !px-4 text-sm shrink-0"
+                      onClick={() =>
+                        applyVl53.mutate({ id: settingsDevice!.id, vl53FallenMm: settingsForm.vl53FallenMm })
+                      }
+                      disabled={applyVl53.isPending}
+                    >
+                      {applyVl53.isPending ? "…" : "Set"}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-white/30 mt-1.5">
+                    Saved: {Math.round((settingsDevice.vl53FallenMm ?? 80) / 10)} cm · Applied on next heartbeat
                   </p>
                 </div>
               </>
