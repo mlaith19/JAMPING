@@ -418,6 +418,7 @@ void handlePortalNotFound() {
 }
 
 void handlePortalScan() {
+  collectScanResults(); // pick up async results if ready
   String json = "[";
   for (int i = 0; i < scannedCount; i++) {
     if (i) json += ",";
@@ -431,10 +432,18 @@ void handlePortalScan() {
 }
 
 void doWifiScan() {
-  Serial.println("[WiFi] Scanning networks...");
+  // Async scan — returns immediately, avoids blocking the watchdog.
+  // Results are collected in collectScanResults() after a short delay.
   WiFi.mode(WIFI_STA);
-  int n = WiFi.scanNetworks(false, false);
-  scannedCount = (n < 0) ? 0 : min(n, 20);
+  WiFi.scanNetworks(true /*async*/);
+  Serial.println("[WiFi] Scan started (async)");
+}
+
+void collectScanResults() {
+  int n = WiFi.scanComplete();
+  if (n == WIFI_SCAN_RUNNING) return; // not done yet
+  if (n < 0) { scannedCount = 0; return; }
+  scannedCount = min(n, 20);
   for (int i = 0; i < scannedCount; i++) scannedNets[i] = WiFi.SSID(i);
   WiFi.scanDelete();
   Serial.printf("[WiFi] Found %d networks\n", scannedCount);
