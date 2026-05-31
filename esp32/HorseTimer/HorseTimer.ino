@@ -22,7 +22,7 @@
 //  PINS
 // ======================================================================
 #define PIN_BOOT     0    // Hold on power-up to enter the config portal
-#define PIN_PHOTO   27    // Photo-electric sensor output (active LOW = beam broken)
+#define PIN_PHOTO   33    // Photo-electric sensor output (active LOW = beam broken)
 #define PIN_BAT     34    // Battery ADC — 100k:100k voltage divider on the 3.3V rail
 #define PIN_LED      2    // Built-in LED
 #define PIN_NRF_CE   4    // NRF24L01 CE
@@ -164,6 +164,7 @@ bool          nrfReady = false;
 // --- Photo-electric sensor ---
 bool          photoState     = false; // True while the beam is currently broken
 bool          photoFired     = false; // True after the trigger has fired; prevents re-fire
+bool          photoDisabled  = false; // Set when the pin is stuck LOW > 10 s (sensor missing/shorted)
 unsigned long photoLowAt     = 0;    // Leading-edge timestamp (used for debounce)
 unsigned long lastGateTrigAt = 0;    // Last dispatched trigger timestamp (used for cooldown)
 
@@ -789,7 +790,12 @@ bool nrfSend(DevEvent evt, uint8_t flags = 0) {
 // ======================================================================
 void sensorsInit() {
   pinMode(PIN_PHOTO, INPUT_PULLUP);
-  Serial.printf("[Sensor] Photo on GPIO%d (active LOW)\n", PIN_PHOTO);
+  delay(5); // Let pull-up settle before sampling
+  bool startLow = (digitalRead(PIN_PHOTO) == LOW);
+  Serial.printf("[Sensor] Photo on GPIO%d (active LOW) — pin reads %s at boot\n",
+                PIN_PHOTO, startLow ? "LOW (check wiring!)" : "HIGH (OK)");
+  // If the pin is already LOW at boot the sensor may be shorted or missing.
+  // Arm normally anyway; checkPhotoTrigger will self-disable after 10 s if stuck.
 
   if (runtimeRole == ROLE_OBSTACLE) {
     Wire.begin(21, 22);
@@ -809,23 +815,41 @@ void sensorsInit() {
 //  PHOTO-ELECTRIC TRIGGER
 //  Returns true exactly once per beam-break event, after debounce and
 //  cooldown have both passed. Sets triggerAt to the leading-edge time.
+//
+//  Stuck-sensor guard: if the pin reads LOW for more than 10 seconds
+//  without ever restoring, we assume the sensor is disconnected or
+//  shorted. photoDisabled is set so the loop stops trying. The sensor
+//  re-enables automatically the moment the pin reads HIGH again.
 // ======================================================================
 bool checkPhotoTrigger(unsigned long& triggerAt) {
   unsigned long now = millis();
   bool beamBroken = (digitalRead(PIN_PHOTO) == LOW);
 
-  if (beamBroken && !photoState) {
-    // Leading edge: beam just went low
+  // If beam restored, clear disabled flag so the sensor works again
+  if (!beamBroken) {
+    photoState    = false;
+    photoFired    = false;
+    photoDisabled = false;
+    return false;
+  }
+
+  // Beam is currently broken
+  if (!photoState) {
+    // Leading edge
     photoState = true;
     photoFired = false;
     photoLowAt = now;
-  } else if (!beamBroken) {
-    // Trailing edge: beam restored — reset for the next event
-    photoState = false;
-    photoFired = false;
   }
 
-  if (photoState && !photoFired
+  // Stuck-sensor guard: 10 s of continuous LOW = sensor not connected
+  if (now - photoLowAt > 10000UL && !photoDisabled) {
+    photoDisabled = true;
+    Serial.println("[Sensor] Photo pin stuck LOW > 10s — disabling until beam restores");
+  }
+
+  if (photoDisabled) return false;
+
+  if (!photoFired
       && (now - photoLowAt     >= (unsigned long)DEBOUNCE_MS)
       && (now - lastGateTrigAt >= (unsigned long)TRIGGER_COOLDOWN_MS)) {
     photoFired     = true;
