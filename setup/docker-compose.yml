@@ -1,0 +1,22 @@
+version: "3.9"
+
+# PostgreSQL database for JAMPING
+# Run:  docker-compose up -d
+# Stop: docker-compose down
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: jamping_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       showjump
+      POSTGRES_USER:     showjump
+      POSTGRES_PASSWORD: showjump
+    ports:
+      - "5440:5432"
+    volumes:
+      - jamping_pgdata:/var/lib/postgresql/data
+
+volumes:
+  jamping_pgdata:
