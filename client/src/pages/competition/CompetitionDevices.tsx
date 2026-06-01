@@ -27,6 +27,7 @@ interface SettingsForm {
   type: DeviceType;
   obstacleNumber: number;
   vl53FallenMm: number;
+  vl53DeltaMm: number;
 }
 
 const CAL_KEY = (id: string) => `ht-vl53-cal-${id}`;
@@ -47,7 +48,7 @@ export function CompetitionDevices() {
   const qc = useQueryClient();
   const [flash, setFlash] = useState<string | null>(null);
   const [settingsDevice, setSettingsDevice] = useState<Device | null>(null);
-  const [settingsForm, setSettingsForm] = useState<SettingsForm>({ name: "", type: "START", obstacleNumber: 1, vl53FallenMm: 80 });
+  const [settingsForm, setSettingsForm] = useState<SettingsForm>({ name: "", type: "START", obstacleNumber: 1, vl53FallenMm: 80, vl53DeltaMm: 50 });
   const [vl53Readings, setVl53Readings] = useState<Record<string, { mm: number; at: number }>>({});
 
   const { data = [] } = useQuery<Device[]>({
@@ -115,6 +116,7 @@ export function CompetitionDevices() {
       if (data.type === "OBSTACLE") {
         payload.obstacleNumber = data.obstacleNumber;
         payload.vl53FallenMm = data.vl53FallenMm;
+        payload.vl53DeltaMm = data.vl53DeltaMm;
       } else {
         payload.obstacleNumber = 0;
       }
@@ -127,8 +129,8 @@ export function CompetitionDevices() {
   });
 
   const applyVl53 = useMutation({
-    mutationFn: ({ id, vl53FallenMm }: { id: string; vl53FallenMm: number }) =>
-      api.patch(`/devices/${id}`, { vl53FallenMm }),
+    mutationFn: ({ id, vl53FallenMm, vl53DeltaMm }: { id: string; vl53FallenMm: number; vl53DeltaMm: number }) =>
+      api.patch(`/devices/${id}`, { vl53FallenMm, vl53DeltaMm }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["devices"] }),
   });
 
@@ -139,6 +141,7 @@ export function CompetitionDevices() {
       type: d.type,
       obstacleNumber: d.obstacleNumber ?? 1,
       vl53FallenMm: d.vl53FallenMm ?? 80,
+      vl53DeltaMm: d.vl53DeltaMm ?? 50,
     });
   }
 
@@ -380,9 +383,9 @@ export function CompetitionDevices() {
                   </select>
                 </div>
                 <div>
-                  <label className="label">VL53 Fallen Threshold (cm)</label>
+                  <label className="label">VL53 Baseline (cm)</label>
                   <p className="text-xs text-white/40 mb-2">
-                    How many cm the bar must rise for the sensor to detect a fall
+                    Calibrated distance when the bar is in place — use "Use" to copy the live reading
                   </p>
 
                   {/* Live sensor reading */}
@@ -436,7 +439,7 @@ export function CompetitionDevices() {
                       className="btn-primary !py-1.5 !px-4 text-sm shrink-0"
                       onClick={() => {
                         localStorage.setItem(CAL_KEY(settingsDevice!.id), String(Date.now()));
-                        applyVl53.mutate({ id: settingsDevice!.id, vl53FallenMm: settingsForm.vl53FallenMm });
+                        applyVl53.mutate({ id: settingsDevice!.id, vl53FallenMm: settingsForm.vl53FallenMm, vl53DeltaMm: settingsForm.vl53DeltaMm });
                       }}
                       disabled={applyVl53.isPending}
                     >
@@ -444,7 +447,34 @@ export function CompetitionDevices() {
                     </button>
                   </div>
                   <p className="text-[11px] text-white/30 mt-1.5">
-                    Saved on device: {Math.round((settingsDevice.vl53FallenMm ?? 80) / 10)} cm · Applied on next heartbeat
+                    Baseline: {Math.round((settingsDevice.vl53FallenMm ?? 80) / 10)} cm · Applied on next heartbeat
+                  </p>
+                </div>
+
+                {/* Fallen delta */}
+                <div>
+                  <label className="label">Fall Detection Delta (cm)</label>
+                  <p className="text-xs text-white/40 mb-2">
+                    How many cm above the baseline triggers FALLEN
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min={1}
+                      max={50}
+                      step={1}
+                      value={Math.round(settingsForm.vl53DeltaMm / 10)}
+                      onChange={(e) =>
+                        setSettingsForm({ ...settingsForm, vl53DeltaMm: Number(e.target.value) * 10 })
+                      }
+                      className="flex-1 accent-[#f59e0b]"
+                    />
+                    <span className="font-mono text-white/90 text-sm w-14 text-center shrink-0">
+                      {Math.round(settingsForm.vl53DeltaMm / 10)} cm
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-white/30 mt-1.5">
+                    Fallen if reading &ge; {Math.round(settingsForm.vl53FallenMm / 10) + Math.round(settingsForm.vl53DeltaMm / 10)} cm (= {Math.round(settingsForm.vl53FallenMm / 10)} + {Math.round(settingsForm.vl53DeltaMm / 10)})
                   </p>
                 </div>
               </>

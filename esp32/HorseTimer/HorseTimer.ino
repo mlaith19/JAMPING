@@ -118,7 +118,8 @@ String  runtimeDevId        = "";
 String  runtimeDevTypeStr   = "START";
 DevRole runtimeRole         = ROLE_START;
 int     runtimeObsNum       = 1;
-int     runtimeVl53FallenMm = VL53_FALLEN_CM * 10;  // Stored in mm; displayed in cm
+int     runtimeVl53FallenMm = VL53_FALLEN_CM * 10;  // Baseline: calibrated distance (mm) when bar is in place
+int     runtimeVl53DeltaMm  = 50;                   // Delta: mm above baseline that triggers FALLEN (default 5 cm)
 
 DevRole typeStrToRole(const String& s) {
   if (s == "FINISH")   return ROLE_FINISH;
@@ -703,10 +704,15 @@ void httpSendHeartbeat() {
     String resp = http.getString();
     StaticJsonDocument<128> rDoc;
     if (!deserializeJson(rDoc, resp)) {
-      JsonVariant v = rDoc["config"]["vl53FallenMm"];
-      if (v.is<int>()) {
-        runtimeVl53FallenMm = v.as<int>();
-        Serial.printf("[Config] vl53FallenMm updated -> %d mm\n", runtimeVl53FallenMm);
+      JsonVariant vBase = rDoc["config"]["vl53FallenMm"];
+      if (vBase.is<int>()) {
+        runtimeVl53FallenMm = vBase.as<int>();
+        Serial.printf("[Config] vl53FallenMm (baseline) -> %d mm\n", runtimeVl53FallenMm);
+      }
+      JsonVariant vDelta = rDoc["config"]["vl53DeltaMm"];
+      if (vDelta.is<int>()) {
+        runtimeVl53DeltaMm = vDelta.as<int>();
+        Serial.printf("[Config] vl53DeltaMm (delta) -> %d mm\n", runtimeVl53DeltaMm);
       }
     }
   } else {
@@ -904,11 +910,14 @@ void vl53Update() {
   }
 
   // Phase 2: fall detection.
-  // "High" means the reading is further away than (baseline + threshold),
-  // i.e. the bar has fallen and the sensor now sees the ground or empty space.
-  // We require VL53_STABLE_MS of continuous high readings to filter out
-  // brief spikes from vibration or a passing horse.
-  bool reading_high = ((int32_t)mm > tofBaseline + runtimeVl53FallenMm);
+  // Threshold = baseline + delta.
+  // Baseline (runtimeVl53FallenMm): manually calibrated distance when bar is in place.
+  //   Falls back to auto-measured tofBaseline if not set (== 0).
+  // Delta (runtimeVl53DeltaMm): how many mm above baseline triggers FALLEN.
+  int32_t baseline = (runtimeVl53FallenMm > 0)
+                     ? (int32_t)runtimeVl53FallenMm
+                     : tofBaseline;
+  bool reading_high = ((int32_t)mm > baseline + (int32_t)runtimeVl53DeltaMm);
   unsigned long now = millis();
 
   if (reading_high && !tofFallen) {

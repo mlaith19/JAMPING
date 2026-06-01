@@ -219,6 +219,7 @@ model Device {
   lastTriggerAt  DateTime?
   obstacleNumber Int?
   vl53FallenMm   Int        @default(80)
+  vl53DeltaMm    Int        @default(50)
   wifiSsid       String?
   rssi           Int?
   ipAddress      String?

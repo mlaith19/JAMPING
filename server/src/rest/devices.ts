@@ -37,7 +37,8 @@ const DeviceInput = z.object({
   online: z.boolean().optional(),
   battery: z.number().int().min(0).max(100).optional(),
   obstacleNumber: z.number().int().min(0).max(15).optional(),
-  vl53FallenMm: z.number().int().min(10).max(2000).optional(),
+  vl53FallenMm: z.number().int().min(0).max(2000).optional(),
+  vl53DeltaMm: z.number().int().min(10).max(500).optional(),
 });
 
 devicesRouter.get("/", async (_req, res) => {
@@ -215,6 +216,7 @@ devicesRouter.post("/:id/heartbeat", async (req, res) => {
     serverTime: Date.now(),
     config: {
       vl53FallenMm: dev.vl53FallenMm,
+      vl53DeltaMm: dev.vl53DeltaMm,
     },
   });
 });

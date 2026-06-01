@@ -130,6 +130,7 @@ export interface Device {
   lastTriggerAt?: string | null;
   obstacleNumber?: number | null;
   vl53FallenMm?: number;
+  vl53DeltaMm?: number;
   wifiSsid?: string | null;
   rssi?: number | null;
   ipAddress?: string | null;
