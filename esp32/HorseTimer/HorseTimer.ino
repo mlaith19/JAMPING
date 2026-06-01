@@ -24,6 +24,7 @@
 #define PIN_BOOT     0    // Hold on power-up to enter the config portal
 #define PIN_PHOTO   33    // Photo-electric sensor output (active LOW = beam broken)
 #define PIN_BAT     34    // Battery ADC — 100k:100k voltage divider on the 3.3V rail
+#define PIN_CHRG    35    // TP4056 CHRG pin (active LOW = charging, HIGH = full/idle)
 #define PIN_LED      2    // Built-in LED
 #define PIN_NRF_CE   4    // NRF24L01 CE
 #define PIN_NRF_CSN  5    // NRF24L01 CSN
@@ -238,9 +239,18 @@ void ledBlink(int n, int onMs = 120, int offMs = 80) {
 // ======================================================================
 
 uint16_t readBatMv() {
-  int raw = analogRead(PIN_BAT);
-  // The voltage divider halves the pack voltage before the ADC, so multiply by 2.
+  // Average 32 samples to smooth ESP32 ADC noise (single reads can jump ±200 counts).
+  long sum = 0;
+  for (int i = 0; i < 32; i++) sum += analogRead(PIN_BAT);
+  int raw = sum / 32;
+  // 100k:100k divider halves the battery voltage before the ADC, so multiply by 2.
   return (uint16_t)((raw / 4095.0f) * 3300.0f * 2.0f);
+}
+
+// Returns true when the TP4056 CHRG pin is LOW (charging in progress).
+// When not connected, PIN_CHRG is pulled HIGH by INPUT_PULLUP → returns false (safe default).
+bool readCharging() {
+  return digitalRead(PIN_CHRG) == LOW;
 }
 
 uint8_t readBatPct() {
@@ -671,6 +681,7 @@ void httpSendHeartbeat() {
 
   StaticJsonDocument<256> doc;
   doc["battery"]        = readBatPct();
+  doc["charging"]       = readCharging();
   doc["rssi"]           = (int)WiFi.RSSI();
   doc["type"]           = runtimeDevTypeStr;
   doc["obstacleNumber"] = runtimeObsNum;
@@ -799,6 +810,7 @@ bool nrfSend(DevEvent evt, uint8_t flags = 0) {
 // ======================================================================
 void sensorsInit() {
   pinMode(PIN_PHOTO, INPUT_PULLUP);
+  pinMode(PIN_CHRG,  INPUT_PULLUP);  // TP4056 CHRG — HIGH when idle/full, LOW when charging
   delay(5); // Let pull-up settle before sampling
   bool startLow = (digitalRead(PIN_PHOTO) == LOW);
   Serial.printf("[Sensor] Photo on GPIO%d (active LOW) — pin reads %s at boot\n",

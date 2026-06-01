@@ -215,6 +215,7 @@ model Device {
   type           DeviceType
   online         Boolean    @default(false)
   battery        Int        @default(100)
+  charging       Boolean    @default(false)
   lastTriggerAt  DateTime?
   obstacleNumber Int?
   vl53FallenMm   Int        @default(80)

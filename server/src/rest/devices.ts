@@ -153,6 +153,7 @@ devicesRouter.post("/:id/vl53", (req, res) => {
 
 const HeartbeatInput = z.object({
   battery: z.number().int().min(0).max(100).optional(),
+  charging: z.boolean().optional(),
   rssi: z.number().int().optional(),
   type: z.enum(DEVICE_TYPES).optional(),
   obstacleNumber: z.number().int().min(0).max(15).optional(),
@@ -162,7 +163,7 @@ const HeartbeatInput = z.object({
 });
 
 devicesRouter.post("/:id/heartbeat", async (req, res) => {
-  const { battery, rssi, type, obstacleNumber, ssid, ip, vl53Baseline } = HeartbeatInput.parse(req.body);
+  const { battery, charging, rssi, type, obstacleNumber, ssid, ip, vl53Baseline } = HeartbeatInput.parse(req.body);
 
   let dev = await prisma.device.findUnique({ where: { id: req.params.id } });
 
@@ -187,6 +188,7 @@ devicesRouter.post("/:id/heartbeat", async (req, res) => {
   } else {
     const updateData: Record<string, any> = { online: true };
     if (battery !== undefined) updateData.battery = battery;
+    if (charging !== undefined) updateData.charging = charging;
     if (ssid !== undefined) updateData.wifiSsid = ssid;
     if (rssi !== undefined) updateData.rssi = rssi;
     if (ip !== undefined) updateData.ipAddress = ip;

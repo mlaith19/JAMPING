@@ -53,6 +53,7 @@ export function CompetitionDevices() {
   const { data = [] } = useQuery<Device[]>({
     queryKey: ["devices"],
     queryFn: () => api.get("/devices"),
+    refetchInterval: 10_000,
   });
 
   const { data: health } = useQuery<{ ips: string[]; port: number; mdns: string }>({
@@ -78,7 +79,11 @@ export function CompetitionDevices() {
       setTimeout(() => setFlash(null), 800);
       qc.invalidateQueries({ queryKey: ["devices"] });
     };
-    const onStatus = () => qc.invalidateQueries({ queryKey: ["devices"] });
+    const onStatus = (d: Device) => {
+      qc.setQueryData<Device[]>(["devices"], (old = []) =>
+        old.some(x => x.id === d.id) ? old.map(x => x.id === d.id ? d : x) : [...old, d]
+      );
+    };
     const onVl53 = (p: any) => {
       if (!p?.deviceId || p.mm == null) return;
       setVl53Readings(prev => ({ ...prev, [p.deviceId]: { mm: p.mm, at: p.at ?? Date.now() } }));
@@ -201,13 +206,17 @@ export function CompetitionDevices() {
 
                   <div className="grid grid-cols-2 gap-2 mt-4">
                     <div className="glass p-3 flex items-center gap-2">
-                      {lowBattery ? (
+                      {d.charging ? (
+                        <Zap className="w-4 h-4 text-yellow-400 animate-pulse" />
+                      ) : lowBattery ? (
                         <BatteryLow className="w-4 h-4 text-red-400" />
                       ) : (
                         <Battery className="w-4 h-4 text-emerald-400" />
                       )}
                       <div>
-                        <div className="text-[10px] text-white/45 uppercase">{t("devices.battery")}</div>
+                        <div className="text-[10px] text-white/45 uppercase">
+                          {d.charging ? t("devices.charging", "טוען") : t("devices.battery")}
+                        </div>
                         <div className="font-display font-bold text-white">{d.battery}%</div>
                       </div>
                     </div>

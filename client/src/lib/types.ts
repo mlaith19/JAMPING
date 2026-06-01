@@ -126,6 +126,7 @@ export interface Device {
   type: DeviceType;
   online: boolean;
   battery: number;
+  charging?: boolean;
   lastTriggerAt?: string | null;
   obstacleNumber?: number | null;
   vl53FallenMm?: number;

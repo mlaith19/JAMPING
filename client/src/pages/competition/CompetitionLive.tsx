@@ -175,6 +175,7 @@ export function CompetitionLive() {
   const { data: devices = [] } = useQuery<Device[]>({
     queryKey: ["devices"],
     queryFn: () => api.get("/devices"),
+    refetchInterval: 10_000,
   });
 
   const cls = classDetail;
@@ -1422,18 +1423,30 @@ export function CompetitionLive() {
                               : t("live.accumulator.done", "בוצע")}
                         </div>
                       )}
-                      <div className="flex items-center justify-center gap-1">
-                        <span className="text-xs font-semibold text-white/85">{n}</span>
-                        {obsDev ? (
-                          <span
-                            className={clsx(
-                              "inline-block w-1.5 h-1.5 rounded-full",
-                              obsDev.online ? "bg-neon-lime" : "bg-red-500"
-                            )}
-                            title={obsDev.online ? obsDev.name : `${obsDev.name} (offline)`}
-                          />
-                        ) : (
-                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500/50" title="No sensor assigned" />
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-semibold text-white/85">{n}</span>
+                          {obsDev ? (
+                            <span
+                              className={clsx(
+                                "inline-block w-1.5 h-1.5 rounded-full",
+                                obsDev.online ? "bg-neon-lime" : "bg-red-500"
+                              )}
+                              title={obsDev.online ? obsDev.name : `${obsDev.name} (offline)`}
+                            />
+                          ) : (
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500/50" title="No sensor assigned" />
+                          )}
+                        </div>
+                        {obsDev && (
+                          <span className={clsx(
+                            "text-[10px] font-mono font-bold leading-none",
+                            obsDev.battery >= 60 ? "text-emerald-400"
+                              : obsDev.battery >= 30 ? "text-amber-400"
+                              : "text-red-400"
+                          )}>
+                            {obsDev.battery}%
+                          </span>
                         )}
                       </div>
                       <div className="space-y-1">
@@ -1497,6 +1510,7 @@ export function CompetitionLive() {
                   const isKnockdown = isDone && current?.outcome === "KNOCKDOWN" && !isRefusal;
                   const jokerAttempt: "JOKER" | "JOKER1" | "JOKER2" =
                     cls?.jokerType === "DOUBLE_JOKER" ? "JOKER2" : cls?.jokerType === "SINGLE_JOKER" ? "JOKER" : "JOKER";
+                  const obsDevAcc = !isJokerCard ? devices.find(d => d.type === "OBSTACLE" && d.obstacleNumber === n) : null;
                   return (
                     <div
                       key={n}
@@ -1529,7 +1543,19 @@ export function CompetitionLive() {
                             : t("live.accumulator.done", "בוצע")}
                         </div>
                       )}
-                      <div className="text-xs font-semibold text-white/85">{n}</div>
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-semibold text-white/85">{n}</span>
+                        {obsDevAcc && (
+                          <span className={clsx(
+                            "text-[10px] font-mono font-bold leading-none",
+                            obsDevAcc.battery >= 60 ? "text-emerald-400"
+                              : obsDevAcc.battery >= 30 ? "text-amber-400"
+                              : "text-red-400"
+                          )}>
+                            {obsDevAcc.battery}%
+                          </span>
+                        )}
+                      </div>
                       {isJokerCard && <div className="text-[10px] font-semibold text-neon-cyan">JOKER (±20)</div>}
                       {isJokerCard ? (
                         <div className="space-y-1">
