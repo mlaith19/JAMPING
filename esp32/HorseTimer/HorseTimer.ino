@@ -702,7 +702,7 @@ void httpSendHeartbeat() {
 
   if (code == 200 || code == 201) {
     String resp = http.getString();
-    StaticJsonDocument<128> rDoc;
+    StaticJsonDocument<256> rDoc;
     if (!deserializeJson(rDoc, resp)) {
       JsonVariant vBase = rDoc["config"]["vl53FallenMm"];
       if (vBase.is<int>()) {
@@ -713,6 +713,15 @@ void httpSendHeartbeat() {
       if (vDelta.is<int>()) {
         runtimeVl53DeltaMm = vDelta.as<int>();
         Serial.printf("[Config] vl53DeltaMm (delta) -> %d mm\n", runtimeVl53DeltaMm);
+      }
+      if (rDoc["restart"].as<bool>()) {
+        Serial.println("[Config] WiFi reset requested — clearing NVS and restarting");
+        http.end();
+        prefs.begin("wifi_cfg", false);
+        prefs.clear();
+        prefs.end();
+        delay(300);
+        ESP.restart();
       }
     }
   } else {

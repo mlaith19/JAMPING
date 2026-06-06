@@ -238,13 +238,13 @@ export function CompetitionLive() {
     };
     const onTimerStarted = (p: any) => {
       if (p.classId !== classId) return;
-      setState((prev) => ({ ...prev, running: true, sensorArmed: false }));
+      setState((prev) => ({ ...prev, running: true }));
     };
     const onTimerStopped = (p: any) => {
       if (p.classId !== classId) return;
       setState((prev) => {
         const next = { ...prev, running: false, elapsedMs: p.elapsedMs };
-        saveCurrentEntrySnapshot(next, true);
+        saveCurrentEntrySnapshot(next, p.sensor ? false : true);
         return next;
       });
     };

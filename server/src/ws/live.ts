@@ -546,11 +546,14 @@ export function registerLive(io: Server, socket: Socket) {
     if (type === "START") {
       if (!room.sensorArmed) return;
       room.timer.start();
-      room.sensorArmed = false;
+      // Stay armed so the FINISH sensor can fire for this same run.
       io.to(`class:${classId}`).emit("timer:started", { classId });
     } else if (type === "FINISH") {
+      if (!room.sensorArmed) return;
       const s = room.timer.stop();
-      io.to(`class:${classId}`).emit("timer:stopped", { classId, elapsedMs: s.elapsedMs });
+      room.sensorArmed = false;
+      io.to(`class:${classId}`).emit("timer:stopped", { classId, elapsedMs: s.elapsedMs, sensor: true });
+      io.to(`class:${classId}`).emit("sensor:disarmed", { classId });
     }
     io.to(`class:${classId}`).emit("sensor:triggered", { classId, type, at: Date.now() });
   });
@@ -999,8 +1002,10 @@ export function handleExternalSensorEvent(input: ExternalSensorEventInput) {
       return false;
     }
 
+    room.timer.reset();
     room.timer.start();
-    room.sensorArmed = false;
+    // Stay armed so the FINISH sensor can fire for this same run.
+    ioRef.to(`class:${classId}`).emit("timer:tick", { classId, elapsedMs: 0 });
     ioRef.to(`class:${classId}`).emit("timer:started", { classId });
     ioRef.to(`class:${classId}`).emit("sensor:triggered", {
       classId,
@@ -1015,26 +1020,31 @@ export function handleExternalSensorEvent(input: ExternalSensorEventInput) {
   }
 
   console.log("External FINISH trigger received", input);
-  const classId = findRunningClassId() ?? findArmedClassId();
+  const classId = findRunningClassId();
   if (!classId) {
-    console.log("Device event ignored: no armed class");
+    console.log("Device event ignored: timer not running");
     return false;
   }
 
   const room = rooms.get(classId);
   if (!room) {
-    console.log("Device event ignored: no armed class");
+    return false;
+  }
+
+  if (!room.sensorArmed) {
+    console.log("Device event ignored: sensor not armed for FINISH");
     return false;
   }
 
   const timerState = room.timer.getState();
   if (!timerState.running) {
-    console.log("Device event ignored: no armed class");
     return false;
   }
 
   const s = room.timer.stop();
-  ioRef.to(`class:${classId}`).emit("timer:stopped", { classId, elapsedMs: s.elapsedMs });
+  room.sensorArmed = false;
+  ioRef.to(`class:${classId}`).emit("timer:stopped", { classId, elapsedMs: s.elapsedMs, sensor: true });
+  ioRef.to(`class:${classId}`).emit("sensor:disarmed", { classId });
   ioRef.to(`class:${classId}`).emit("sensor:triggered", {
     classId,
     type: "FINISH",

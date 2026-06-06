@@ -5,7 +5,7 @@ import { useOutletContext } from "react-router-dom";
 import {
   Zap, RotateCcw, Trash2, Battery, BatteryLow,
   Radio, RadioTower, Target, Antenna, Settings2, Wifi,
-  SignalHigh, Server, Network, AlertTriangle, Crosshair,
+  SignalHigh, Server, Network, AlertTriangle, Crosshair, WifiOff,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../../lib/api";
@@ -128,6 +128,10 @@ export function CompetitionDevices() {
     },
   });
 
+  const wifiReset = useMutation({
+    mutationFn: (id: string) => api.post(`/devices/${id}/wifi-reset`),
+  });
+
   const applyVl53 = useMutation({
     mutationFn: ({ id, vl53FallenMm, vl53DeltaMm }: { id: string; vl53FallenMm: number; vl53DeltaMm: number }) =>
       api.patch(`/devices/${id}`, { vl53FallenMm, vl53DeltaMm }),
@@ -135,6 +139,7 @@ export function CompetitionDevices() {
   });
 
   function openSettings(d: Device) {
+    wifiReset.reset();
     setSettingsDevice(d);
     setSettingsForm({
       name: d.name,
@@ -480,8 +485,30 @@ export function CompetitionDevices() {
               </>
             )}
 
+            {/* WiFi reset */}
+            <div className="border-t border-white/10 pt-4 mt-2">
+              <p className="text-[11px] text-white/40 mb-2">
+                איפוס WiFi — המכשיר יאופס בפעימה הבאה ויפתח פורטל הגדרה חדש
+              </p>
+              <button
+                type="button"
+                className="btn-ghost w-full text-red-400/80 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 gap-2 text-sm"
+                disabled={wifiReset.isPending || wifiReset.isSuccess}
+                onClick={() => {
+                  if (confirm("האם לאפס את הגדרות ה-WiFi של המכשיר? הוא יאופס ויפתח פורטל הגדרה."))
+                    wifiReset.mutate(settingsDevice!.id);
+                }}
+              >
+                <WifiOff className="w-4 h-4" />
+                {wifiReset.isSuccess ? "נשלח — יאופס בפעימה הבאה" : "אפס הגדרות WiFi"}
+              </button>
+            </div>
+
             <div className="flex items-center justify-end gap-2 pt-2">
-              <button type="button" onClick={() => setSettingsDevice(null)} className="btn-ghost">
+              <button type="button" onClick={() => {
+                setSettingsDevice(null);
+                wifiReset.reset();
+              }} className="btn-ghost">
                 {t("common.cancel")}
               </button>
               <button type="submit" className="btn-primary" disabled={update.isPending}>

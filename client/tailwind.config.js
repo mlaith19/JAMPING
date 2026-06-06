@@ -8,6 +8,22 @@ export default {
         mono: ["'JetBrains Mono'", "ui-monospace", "monospace"],
       },
       colors: {
+        background: "var(--c-bg)",
+        foreground: "var(--c-fg)",
+        card: "var(--c-card)",
+        secondary: "var(--c-secondary)",
+        border: "var(--c-border)",
+        primary: "var(--c-primary)",
+        "primary-foreground": "#06130d",
+        destructive: "var(--c-destructive)",
+        "destructive-foreground": "#ffffff",
+        accent: "var(--c-accent)",
+        "accent-foreground": "#06130d",
+        info: "var(--c-info)",
+        "info-foreground": "#06130d",
+        muted: {
+          foreground: "var(--c-muted-fg)",
+        },
         ink: { 950: "#0f1419", 900: "#0f1419", 800: "#1a1f26", 700: "#262d36" },
         neon: {
           violet: "#06b6d4",

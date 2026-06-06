@@ -6,6 +6,7 @@ import { handleExternalSensorEvent } from "../ws/live.js";
 
 const HEARTBEAT_TIMEOUT_MS = 30_000;
 const lastHeartbeat = new Map<string, number>();
+const pendingWifiReset = new Set<string>();
 
 export function recordHeartbeat(deviceId: string) {
   lastHeartbeat.set(deviceId, Date.now());
@@ -70,7 +71,23 @@ devicesRouter.post("/:id/test", async (req, res) => {
     data: { lastTriggerAt: new Date() },
   });
   broadcast("sensor:triggered", { deviceId: dev.id, type: dev.type, manual: true, at: Date.now() });
+  if (dev.type === "START" || dev.type === "FINISH") {
+    handleExternalSensorEvent({
+      gateType: dev.type as "START" | "FINISH",
+      eventType: "BEAM_BROKEN",
+      deviceId: dev.id,
+      timestamp: Date.now(),
+    });
+  }
   res.json(dev);
+});
+
+devicesRouter.post("/:id/wifi-reset", async (req, res) => {
+  const dev = await prisma.device.findUnique({ where: { id: req.params.id } });
+  if (!dev) return res.status(404).json({ error: "Device not found" });
+  pendingWifiReset.add(req.params.id);
+  console.log(`[devices] WiFi reset scheduled for ${req.params.id}`);
+  res.json({ ok: true, scheduled: true, deviceId: req.params.id });
 });
 
 devicesRouter.post("/:id/reset", async (req, res) => {
@@ -88,7 +105,7 @@ devicesRouter.delete("/:id", async (req, res) => {
 });
 
 const TriggerInput = z.object({
-  gateType: z.enum(["START", "FINISH"]),
+  gateType: z.enum(["START", "FINISH"]).optional(),
   timestamp: z.number().int().optional(),
 });
 
@@ -96,7 +113,14 @@ devicesRouter.post("/:id/trigger", async (req, res) => {
   const dev = await prisma.device.findUnique({ where: { id: req.params.id } });
   if (!dev) return res.status(404).json({ error: "Device not found" });
 
-  const { gateType, timestamp } = TriggerInput.parse(req.body);
+  const { timestamp } = TriggerInput.partial().parse(req.body);
+
+  // Use the device type from DB (set in UI) — not what the ESP32 sends.
+  // This lets the user change START/FINISH in the web app without re-flashing.
+  if (dev.type !== "START" && dev.type !== "FINISH") {
+    return res.json({ ok: false, reason: "device not configured as START or FINISH", deviceId: dev.id });
+  }
+  const gateType = dev.type as "START" | "FINISH";
 
   const now = new Date();
   await prisma.device.update({
@@ -193,7 +217,6 @@ devicesRouter.post("/:id/heartbeat", async (req, res) => {
     if (ssid !== undefined) updateData.wifiSsid = ssid;
     if (rssi !== undefined) updateData.rssi = rssi;
     if (ip !== undefined) updateData.ipAddress = ip;
-
     dev = await prisma.device.update({
       where: { id: req.params.id },
       data: updateData,
@@ -211,9 +234,13 @@ devicesRouter.post("/:id/heartbeat", async (req, res) => {
     });
   }
 
+  const shouldRestart = pendingWifiReset.has(req.params.id);
+  if (shouldRestart) pendingWifiReset.delete(req.params.id);
+
   res.json({
     ok: true,
     serverTime: Date.now(),
+    restart: shouldRestart,
     config: {
       vl53FallenMm: dev.vl53FallenMm,
       vl53DeltaMm: dev.vl53DeltaMm,
